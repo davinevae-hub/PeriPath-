@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0c0b10" />
+  <meta name="theme-color" content="#0b0c10" />
   <title>PeriPath — Symptom & Cycle Tracker</title>
 
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
-  <meta name="description" content="PeriPath is a free, privacy-first perimenopause symptom & cycle tracker that works offline. No login. Data stays on your device." />
+  <meta name="description" content="PeriPath is a free, privacy-first symptom & cycle tracker that works offline. No login. Data stays on your device." />
 </head>
 
 <body>
@@ -18,6 +18,7 @@
         <span class="mark-ring"></span>
         <span class="mark-letter">P</span>
       </div>
+
       <div class="brand">
         <div class="brand-name">PeriPath</div>
         <div class="brand-tag">Private tracking. Offline-ready. No account.</div>
@@ -33,30 +34,34 @@
 
   <div class="layout">
     <aside class="rail" aria-label="Navigation">
-      <button class="nav active" data-view="checkin">
+      <button class="nav active" data-view="checkin" type="button">
         <span class="nav-ico">✶</span>
         <span class="nav-label">Check-In</span>
       </button>
-      <button class="nav" data-view="calendar">
+
+      <button class="nav" data-view="calendar" type="button">
         <span class="nav-ico">▦</span>
         <span class="nav-label">Calendar</span>
       </button>
-      <button class="nav" data-view="insights">
+
+      <button class="nav" data-view="insights" type="button">
         <span class="nav-ico">◔</span>
         <span class="nav-label">Insights</span>
       </button>
-      <button class="nav" data-view="report">
+
+      <button class="nav" data-view="report" type="button">
         <span class="nav-ico">≡</span>
         <span class="nav-label">Report</span>
       </button>
-      <button class="nav" data-view="settings">
+
+      <button class="nav" data-view="settings" type="button">
         <span class="nav-ico">⚙</span>
         <span class="nav-label">Settings</span>
       </button>
 
       <div class="rail-foot">
         <div class="tiny muted">
-          Symptom Load Score: sum of 10 symptom ratings (0–3) → 0–30. Not diagnostic.
+          Symptom Load Score = sum of 10 symptom ratings (0–3) → 0–30. Not diagnostic.
         </div>
       </div>
     </aside>
@@ -68,7 +73,9 @@
           <div class="panel-head">
             <div>
               <h1>Daily Check-In</h1>
-              <div class="muted">Fast, consistent logging improves patterns and reports.</div>
+              <div class="muted">
+                A quick snapshot of your day. Patterns matter more than perfection.
+              </div>
             </div>
 
             <div class="panel-actions">
@@ -84,7 +91,12 @@
             </div>
           </div>
 
-          <div class="grid" id="symptomGrid"></div>
+          <div class="micro muted">
+            How was your body today? Use the sliders. We’ll summarize it into a score you can track over time.
+          </div>
+
+          <!-- JS injects grouped symptom cards here -->
+          <div id="symptomGroups" class="groups"></div>
 
           <div class="row between wrap">
             <label class="toggle">
@@ -92,25 +104,32 @@
               <span>Period today</span>
             </label>
 
-            <div class="row gap wrap">
-              <button id="saveBtn" class="btn btn-primary" type="button">Save</button>
-              <button id="resetBtn" class="btn btn-ghost" type="button">Reset</button>
+            <div class="chip muted">
+              Scale: None · Mild · Moderate · Strong
             </div>
           </div>
 
           <div class="field">
             <label class="label" for="notes">Notes (optional)</label>
-            <textarea id="notes" rows="3" placeholder="Sleep triggers, stress, meds, lifestyle changes, anything relevant."></textarea>
+            <textarea id="notes" rows="3" placeholder="Anything you want future-you (or your clinician) to know."></textarea>
           </div>
 
           <div id="saveStatus" class="status" role="status" aria-live="polite"></div>
+
+          <!-- Sticky actions (app-like) -->
+          <div class="stickyActions">
+            <div class="stickyInner">
+              <button id="saveBtn" class="btn btn-primary" type="button">Save</button>
+              <button id="resetBtn" class="btn btn-ghost" type="button">Reset</button>
+            </div>
+          </div>
         </div>
 
-        <div class="panel">
-          <h2>Safety note</h2>
+        <div class="panel calm">
+          <h2>Support + safety</h2>
           <ul class="muted list">
             <li>This app summarizes what you log; it does not diagnose.</li>
-            <li>Seek urgent care for severe bleeding, chest pain, fainting, or thoughts of self-harm.</li>
+            <li>If you have severe bleeding, chest pain, fainting, or thoughts of self-harm, seek urgent care.</li>
             <li>Use the Report tab before appointments to share patterns clearly.</li>
           </ul>
         </div>
@@ -134,9 +153,7 @@
 
               <div class="field small">
                 <label class="label" for="calShadeMode">Shade by</label>
-                <select id="calShadeMode">
-                  <option value="score">Symptom Load</option>
-                </select>
+                <select id="calShadeMode"></select>
               </div>
             </div>
           </div>
@@ -164,7 +181,7 @@
           <div class="panel-head">
             <div>
               <h1>Insights</h1>
-              <div class="muted">Trends based on your saved entries (last 30 days where available).</div>
+              <div class="muted">Trends from your entries (last 30 days where available).</div>
             </div>
 
             <div class="panel-actions">
@@ -191,7 +208,15 @@
 
         <div class="panel">
           <h2>Top symptoms (last 30 days)</h2>
-          <div id="topSymptoms" class="muted">No data yet.</div>
+          <div id="topSymptoms" class="cards muted">No data yet.</div>
+        </div>
+
+        <div class="panel calm">
+          <h2>Therapist note</h2>
+          <div class="muted">
+            If your symptoms feel overwhelming, you’re not “behind.” You’re collecting evidence.
+            Use this app as a gentle mirror, not a judgment.
+          </div>
         </div>
       </section>
 
@@ -224,9 +249,7 @@
                 <div class="report-title">PeriPath Summary</div>
                 <div id="reportMeta" class="muted">—</div>
               </div>
-              <div class="report-note muted">
-                Self-reported summary. Not diagnostic.
-              </div>
+              <div class="report-note muted">Self-reported summary. Not diagnostic.</div>
             </div>
 
             <div class="report-kpis">
@@ -251,18 +274,18 @@
             <div class="split">
               <section class="report-block">
                 <h3>Top symptoms</h3>
-                <div id="rTopSymptoms" class="muted">—</div>
+                <div id="rTopSymptoms" class="cards muted">—</div>
               </section>
 
               <section class="report-block">
                 <h3>Cycle intervals (if periods tracked)</h3>
-                <div id="rCycle" class="muted">—</div>
+                <div id="rCycle" class="cards muted">—</div>
               </section>
             </div>
 
             <section class="report-block">
               <h3>Recent notes</h3>
-              <div id="rNotes" class="muted">—</div>
+              <div id="rNotes" class="cards muted">—</div>
             </section>
 
             <footer class="report-foot muted">
@@ -300,7 +323,7 @@
             </div>
           </div>
 
-          <div class="box">
+          <div class="box calm">
             <h2>Privacy</h2>
             <div class="muted">
               PeriPath stores your entries locally in your browser’s IndexedDB storage. No account is required.
@@ -314,10 +337,11 @@
 
   <!-- DAY EDIT MODAL -->
   <div id="modalBackdrop" class="modal-backdrop" hidden></div>
+
   <div id="dayModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
     <div class="modal-head">
       <div>
-        <div id="modalTitle" class="modal-title">Day</div>
+        <div id="modalTitle" class="modal-title">Edit Day</div>
         <div id="modalSub" class="muted small">—</div>
       </div>
       <button id="modalClose" class="btn btn-ghost" type="button">Close</button>
@@ -336,7 +360,12 @@
         </label>
       </div>
 
-      <div id="modalSymptomGrid" class="grid"></div>
+      <div class="micro muted">
+        Gentle check: you’re not trying to be perfect—just consistent.
+      </div>
+
+      <!-- JS injects grouped symptom cards here -->
+      <div id="modalSymptomGroups" class="groups"></div>
 
       <div class="field">
         <label class="label" for="modalNotes">Notes</label>
@@ -361,6 +390,7 @@
       </div>
       <button id="installClose" class="btn btn-ghost" type="button">Close</button>
     </div>
+
     <div class="modal-body">
       <div class="box">
         <h3>iPhone (Safari)</h3>
@@ -370,6 +400,7 @@
           <li>Tap “Add”</li>
         </ol>
       </div>
+
       <div class="box">
         <h3>Android (Chrome)</h3>
         <ol class="muted list">
