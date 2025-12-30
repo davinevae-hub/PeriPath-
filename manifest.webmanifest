@@ -1,0 +1,9 @@
+{
+  "name": "PeriPath",
+  "short_name": "PeriPath",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c0b10",
+  "theme_color": "#0c0b10",
+  "description": "Free, privacy-first symptom & cycle tracker. Offline-ready. No login."
+}
