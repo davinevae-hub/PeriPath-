@@ -1,105 +1,75 @@
 (() => {
   // -------------------------
-  // Data model + constants
+  // Symptom model (grouped)
   // -------------------------
-  const SYMPTOMS = [
-    { key: "hotFlashes", label: "Hot flashes" },
-    { key: "nightSweats", label: "Night sweats" },
-    { key: "sleep", label: "Sleep quality" },
-    { key: "mood", label: "Mood / irritability" },
-    { key: "anxiety", label: "Anxiety" },
-    { key: "brainFog", label: "Brain fog" },
-    { key: "fatigue", label: "Fatigue" },
-    { key: "jointAches", label: "Joint aches" },
-    { key: "dryness", label: "Dryness / discomfort" },
-    { key: "libido", label: "Libido changes" }
+  const GROUPS = [
+    {
+      id: "vasomotor",
+      title: "Vasomotor",
+      sub: "Heat shifts and sweating patterns that can impact comfort.",
+      items: [
+        { key: "hotFlashes", label: "Hot flashes" },
+        { key: "nightSweats", label: "Night sweats" }
+      ]
+    },
+    {
+      id: "sleepEnergy",
+      title: "Sleep & energy",
+      sub: "Rest, stamina, and mental clarity across the day.",
+      items: [
+        { key: "sleep", label: "Sleep quality" },
+        { key: "fatigue", label: "Fatigue" },
+        { key: "brainFog", label: "Brain fog" }
+      ]
+    },
+    {
+      id: "mood",
+      title: "Mood",
+      sub: "Emotional load and nervous system intensity.",
+      items: [
+        { key: "mood", label: "Mood / irritability" },
+        { key: "anxiety", label: "Anxiety" }
+      ]
+    },
+    {
+      id: "body",
+      title: "Body",
+      sub: "Physical discomfort that can influence movement and recovery.",
+      items: [
+        { key: "jointAches", label: "Joint aches" }
+      ]
+    },
+    {
+      id: "intimacy",
+      title: "Intimacy",
+      sub: "Comfort and interest changes are common—and trackable.",
+      items: [
+        { key: "dryness", label: "Dryness / discomfort" },
+        { key: "libido", label: "Libido changes" }
+      ]
+    }
   ];
 
-  const DB_NAME = "peripath_db";
-  const DB_VERSION = 2;
-  const STORE = "daily_logs"; // keyPath: date (YYYY-MM-DD)
+  const SYMPTOMS = GROUPS.flatMap(g => g.items);
 
-  // -------------------------
-  // DOM
-  // -------------------------
-  const navBtns = Array.from(document.querySelectorAll(".nav"));
-  const views = {
-    checkin: document.getElementById("view-checkin"),
-    calendar: document.getElementById("view-calendar"),
-    insights: document.getElementById("view-insights"),
-    report: document.getElementById("view-report"),
-    settings: document.getElementById("view-settings")
-  };
-
-  const offlineBadge = document.getElementById("offlineBadge");
-  const todayBtn = document.getElementById("todayBtn");
-  const installHelpBtn = document.getElementById("installHelpBtn");
-
-  // Check-in
-  const symptomGrid = document.getElementById("symptomGrid");
-  const logDate = document.getElementById("logDate");
-  const periodToday = document.getElementById("periodToday");
-  const notes = document.getElementById("notes");
-  const scoreValue = document.getElementById("scoreValue");
-  const saveBtn = document.getElementById("saveBtn");
-  const resetBtn = document.getElementById("resetBtn");
-  const saveStatus = document.getElementById("saveStatus");
-
-  // Calendar
-  const prevMonth = document.getElementById("prevMonth");
-  const nextMonth = document.getElementById("nextMonth");
-  const monthLabel = document.getElementById("monthLabel");
-  const calendarGrid = document.getElementById("calendarGrid");
-  const calShadeMode = document.getElementById("calShadeMode");
-
-  // Insights
-  const avg7El = document.getElementById("avg7");
-  const avgPrev7El = document.getElementById("avgPrev7");
-  const trend7El = document.getElementById("trend7");
-  const topSymptomsEl = document.getElementById("topSymptoms");
-  const trendChart = document.getElementById("trendChart");
-
-  // Report
-  const reportRange = document.getElementById("reportRange");
-  const printBtn = document.getElementById("printBtn");
-  const reportMeta = document.getElementById("reportMeta");
-  const rEntries = document.getElementById("rEntries");
-  const rAvg = document.getElementById("rAvg");
-  const rMax = document.getElementById("rMax");
-  const rPeriodDays = document.getElementById("rPeriodDays");
-  const rTopSymptoms = document.getElementById("rTopSymptoms");
-  const rCycle = document.getElementById("rCycle");
-  const rNotes = document.getElementById("rNotes");
-
-  // Settings export/import
-  const exportJsonBtn = document.getElementById("exportJsonBtn");
-  const exportCsvBtn = document.getElementById("exportCsvBtn");
-  const importBtn = document.getElementById("importBtn");
-  const wipeBtn = document.getElementById("wipeBtn");
-  const importFile = document.getElementById("importFile");
-  const dataStatus = document.getElementById("dataStatus");
-
-  // Day modal
-  const modalBackdrop = document.getElementById("modalBackdrop");
-  const dayModal = document.getElementById("dayModal");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalSub = document.getElementById("modalSub");
-  const modalClose = document.getElementById("modalClose");
-  const modalScore = document.getElementById("modalScore");
-  const modalPeriod = document.getElementById("modalPeriod");
-  const modalSymptomGrid = document.getElementById("modalSymptomGrid");
-  const modalNotes = document.getElementById("modalNotes");
-  const modalSave = document.getElementById("modalSave");
-  const modalDelete = document.getElementById("modalDelete");
-  const modalStatus = document.getElementById("modalStatus");
-
-  // Install modal
-  const installModal = document.getElementById("installModal");
-  const installClose = document.getElementById("installClose");
+  // Values 0–3 with labels (therapist-friendly, still numeric internally)
+  function levelLabel(v) {
+    switch (Number(v)) {
+      case 0: return "None";
+      case 1: return "Mild";
+      case 2: return "Moderate";
+      case 3: return "Strong";
+      default: return "—";
+    }
+  }
 
   // -------------------------
   // IndexedDB
   // -------------------------
+  const DB_NAME = "peripath_db";
+  const DB_VERSION = 2;
+  const STORE = "daily_logs"; // keyPath: date (YYYY-MM-DD)
+
   function openDB() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -162,49 +132,133 @@
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   }
+
   function parseISO(iso) {
     const [y, m, d] = iso.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
+
   function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
   function endOfDay(d) { const x = new Date(d); x.setHours(23,59,59,999); return x; }
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-  function escapeHTML(str) {
-    return String(str)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+
   function sumScore(symptomsObj) {
     return SYMPTOMS.reduce((acc, s) => acc + (Number(symptomsObj?.[s.key]) || 0), 0);
   }
+
   function format(n, digits=1) {
     if (n === null || n === undefined || Number.isNaN(n)) return "—";
     return Number(n).toFixed(digits);
   }
+
   function daysBetween(aISO, bISO) {
     const a = parseISO(aISO).getTime();
     const b = parseISO(bISO).getTime();
     return Math.round((b - a) / (1000*60*60*24));
   }
 
-  // Shade modes for calendar
+  // Calendar shade modes
   function shadeForScore(score) {
-    // 0–30 buckets
     if (score <= 2) return { bg: "var(--good)" };
     if (score <= 8) return { bg: "var(--mild)" };
     if (score <= 16) return { bg: "var(--mod)" };
     return { bg: "var(--high)" };
   }
+
   function shadeForSymptom(val) {
-    // 0–3 mapping
-    if (val <= 0) return { bg: "rgba(94,224,174,.10)" };
-    if (val === 1) return { bg: "rgba(212,175,55,.12)" };
-    if (val === 2) return { bg: "rgba(245,165,36,.12)" };
+    const v = Number(val || 0);
+    if (v <= 0) return { bg: "rgba(94,224,174,.10)" };
+    if (v === 1) return { bg: "rgba(184,146,42,.12)" };
+    if (v === 2) return { bg: "rgba(245,165,36,.12)" };
     return { bg: "rgba(193,18,31,.14)" };
   }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // -------------------------
+  // DOM
+  // -------------------------
+  const navBtns = Array.from(document.querySelectorAll(".nav"));
+  const views = {
+    checkin: document.getElementById("view-checkin"),
+    calendar: document.getElementById("view-calendar"),
+    insights: document.getElementById("view-insights"),
+    report: document.getElementById("view-report"),
+    settings: document.getElementById("view-settings")
+  };
+
+  const offlineBadge = document.getElementById("offlineBadge");
+  const todayBtn = document.getElementById("todayBtn");
+  const installHelpBtn = document.getElementById("installHelpBtn");
+
+  // Check-in
+  const symptomGroups = document.getElementById("symptomGroups");
+  const logDate = document.getElementById("logDate");
+  const periodToday = document.getElementById("periodToday");
+  const notes = document.getElementById("notes");
+  const scoreValue = document.getElementById("scoreValue");
+  const saveBtn = document.getElementById("saveBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const saveStatus = document.getElementById("saveStatus");
+
+  // Calendar
+  const prevMonth = document.getElementById("prevMonth");
+  const nextMonth = document.getElementById("nextMonth");
+  const monthLabel = document.getElementById("monthLabel");
+  const calendarGrid = document.getElementById("calendarGrid");
+  const calShadeMode = document.getElementById("calShadeMode");
+
+  // Insights
+  const avg7El = document.getElementById("avg7");
+  const avgPrev7El = document.getElementById("avgPrev7");
+  const trend7El = document.getElementById("trend7");
+  const topSymptomsEl = document.getElementById("topSymptoms");
+  const trendChart = document.getElementById("trendChart");
+
+  // Report
+  const reportRange = document.getElementById("reportRange");
+  const printBtn = document.getElementById("printBtn");
+  const reportMeta = document.getElementById("reportMeta");
+  const rEntries = document.getElementById("rEntries");
+  const rAvg = document.getElementById("rAvg");
+  const rMax = document.getElementById("rMax");
+  const rPeriodDays = document.getElementById("rPeriodDays");
+  const rTopSymptoms = document.getElementById("rTopSymptoms");
+  const rCycle = document.getElementById("rCycle");
+  const rNotes = document.getElementById("rNotes");
+
+  // Settings
+  const exportJsonBtn = document.getElementById("exportJsonBtn");
+  const exportCsvBtn = document.getElementById("exportCsvBtn");
+  const importBtn = document.getElementById("importBtn");
+  const wipeBtn = document.getElementById("wipeBtn");
+  const importFile = document.getElementById("importFile");
+  const dataStatus = document.getElementById("dataStatus");
+
+  // Modals
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const dayModal = document.getElementById("dayModal");
+  const modalSub = document.getElementById("modalSub");
+  const modalClose = document.getElementById("modalClose");
+  const modalScore = document.getElementById("modalScore");
+  const modalPeriod = document.getElementById("modalPeriod");
+  const modalSymptomGroups = document.getElementById("modalSymptomGroups");
+  const modalNotes = document.getElementById("modalNotes");
+  const modalSave = document.getElementById("modalSave");
+  const modalDelete = document.getElementById("modalDelete");
+  const modalStatus = document.getElementById("modalStatus");
+
+  const installModal = document.getElementById("installModal");
+  const installClose = document.getElementById("installClose");
 
   // -------------------------
   // Navigation
@@ -221,39 +275,55 @@
   navBtns.forEach(btn => btn.addEventListener("click", () => setView(btn.dataset.view)));
 
   // -------------------------
-  // Build symptom UI blocks
+  // Build UI (grouped symptom cards)
   // -------------------------
-  function symptomBlockHTML(sym) {
+  function symptomCardHTML(sym, prefix) {
+    // prefix makes IDs unique across checkin vs modal (e.g. "c" vs "m")
     return `
       <div class="symptom">
         <div class="symptom-top">
           <div class="symptom-name">${sym.label}</div>
-          <div class="symptom-cap">0–3</div>
+          <div class="levelPill" id="${prefix}-pill-${sym.key}">None</div>
         </div>
+
         <div class="scale">
-          <input type="range" min="0" max="3" step="1" value="0" data-sym="${sym.key}" aria-label="${sym.label}">
-          <div class="scale-val" id="val-${sym.key}">0</div>
+          <input type="range" min="0" max="3" step="1" value="0" data-${prefix}sym="${sym.key}" aria-label="${sym.label}">
+          <div class="scale-val" id="${prefix}-val-${sym.key}">0 · None</div>
         </div>
       </div>
     `;
   }
 
-  const checkinState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
-  function buildCheckinGrid() {
-    symptomGrid.innerHTML = SYMPTOMS.map(symptomBlockHTML).join("");
+  function groupHTML(group, prefix) {
+    const cards = group.items.map(s => symptomCardHTML(s, prefix)).join("");
+    return `
+      <div class="group">
+        <div class="group-head">
+          <div>
+            <div class="group-title">${group.title}</div>
+            <div class="group-sub">${group.sub}</div>
+          </div>
+        </div>
+        <div class="grid">${cards}</div>
+      </div>
+    `;
+  }
 
-    symptomGrid.addEventListener("input", (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLInputElement)) return;
-      if (t.type !== "range") return;
-      const key = t.dataset.sym;
-      if (!key) return;
-      const v = clamp(Number(t.value), 0, 3);
-      checkinState[key] = v;
-      const valEl = document.getElementById(`val-${key}`);
-      if (valEl) valEl.textContent = String(v);
-      scoreValue.textContent = String(sumScore(checkinState));
-    });
+  function buildGroups(container, prefix) {
+    container.innerHTML = GROUPS.map(g => groupHTML(g, prefix)).join("");
+  }
+
+  // -------------------------
+  // State
+  // -------------------------
+  const checkinState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+  const modalState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+
+  // -------------------------
+  // Check-in events / helpers
+  // -------------------------
+  function updateCheckinScore() {
+    scoreValue.textContent = String(sumScore(checkinState));
   }
 
   function setCheckinUI(entry) {
@@ -261,14 +331,19 @@
     SYMPTOMS.forEach(s => {
       const v = clamp(Number(symptoms[s.key] ?? 0), 0, 3);
       checkinState[s.key] = v;
-      const input = symptomGrid.querySelector(`input[data-sym="${s.key}"]`);
-      const valEl = document.getElementById(`val-${s.key}`);
+
+      const input = symptomGroups.querySelector(`input[data-csym="${s.key}"]`);
+      const pill = document.getElementById(`c-pill-${s.key}`);
+      const valEl = document.getElementById(`c-val-${s.key}`);
+
       if (input) input.value = String(v);
-      if (valEl) valEl.textContent = String(v);
+      if (pill) pill.textContent = levelLabel(v);
+      if (valEl) valEl.textContent = `${v} · ${levelLabel(v)}`;
     });
-    scoreValue.textContent = String(sumScore(checkinState));
+
     periodToday.checked = !!entry?.period;
     notes.value = entry?.notes || "";
+    updateCheckinScore();
   }
 
   async function loadIntoCheckin(dateISO) {
@@ -296,6 +371,7 @@
 
     await putLog(entry);
     saveStatus.textContent = `Saved entry for ${dateISO}.`;
+    await refreshAllLogsCache();
     refreshCalendar();
     refreshInsights();
     refreshReport();
@@ -304,34 +380,60 @@
   function resetCheckinUI() {
     SYMPTOMS.forEach(s => {
       checkinState[s.key] = 0;
-      const input = symptomGrid.querySelector(`input[data-sym="${s.key}"]`);
-      const valEl = document.getElementById(`val-${s.key}`);
+      const input = symptomGroups.querySelector(`input[data-csym="${s.key}"]`);
+      const pill = document.getElementById(`c-pill-${s.key}`);
+      const valEl = document.getElementById(`c-val-${s.key}`);
+
       if (input) input.value = "0";
-      if (valEl) valEl.textContent = "0";
+      if (pill) pill.textContent = "None";
+      if (valEl) valEl.textContent = "0 · None";
     });
+
     periodToday.checked = false;
     notes.value = "";
     scoreValue.textContent = "0";
     saveStatus.textContent = "Reset (not saved).";
   }
 
+  // Live slider updates (check-in)
+  function wireCheckinSliders() {
+    symptomGroups.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.type !== "range") return;
+
+      const key = t.dataset.csym;
+      if (!key) return;
+
+      const v = clamp(Number(t.value), 0, 3);
+      checkinState[key] = v;
+
+      const pill = document.getElementById(`c-pill-${key}`);
+      const valEl = document.getElementById(`c-val-${key}`);
+
+      if (pill) pill.textContent = levelLabel(v);
+      if (valEl) valEl.textContent = `${v} · ${levelLabel(v)}`;
+
+      updateCheckinScore();
+    });
+  }
+
   // -------------------------
-  // Calendar
+  // Calendar + cache
   // -------------------------
   let calCursor = new Date();
-  let allLogsCache = []; // refreshed by fetch
-
-  function populateShadeModeSelect() {
-    // Start with score + each symptom
-    calShadeMode.innerHTML = `
-      <option value="score">Symptom Load</option>
-      ${SYMPTOMS.map(s => `<option value="${s.key}">${s.label}</option>`).join("")}
-    `;
-  }
+  let allLogsCache = [];
 
   async function refreshAllLogsCache() {
     allLogsCache = await getAllLogs();
     allLogsCache.sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  function populateShadeModeSelect() {
+    calShadeMode.innerHTML = `
+      <option value="score">Symptom Load</option>
+      ${SYMPTOMS.map(s => `<option value="${s.key}">${s.label}</option>`).join("")}
+    `;
   }
 
   async function refreshCalendar() {
@@ -340,18 +442,16 @@
 
     const monthStart = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
     const monthEnd = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0);
-
     monthLabel.textContent = monthStart.toLocaleString(undefined, { month:"long", year:"numeric" });
 
-    // grid range: Sunday start -> Saturday end
     const start = new Date(monthStart);
     start.setDate(start.getDate() - start.getDay());
     const end = new Date(monthEnd);
     end.setDate(end.getDate() + (6 - end.getDay()));
 
     const shadeMode = calShadeMode.value || "score";
-
     calendarGrid.innerHTML = "";
+
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const iso = toISO(d);
       const inMonth = d.getMonth() === monthStart.getMonth();
@@ -363,20 +463,18 @@
       if (entry) cell.classList.add("hasData");
       if (entry?.period) cell.classList.add("period");
 
-      let bg = "rgba(22,21,38,.45)";
+      let bg = "rgba(15,17,24,.45)";
       if (entry) {
         if (shadeMode === "score") {
           bg = shadeForScore(Number(entry.score ?? sumScore(entry.symptoms))).bg;
         } else {
-          const v = Number(entry.symptoms?.[shadeMode] || 0);
-          bg = shadeForSymptom(v).bg;
+          bg = shadeForSymptom(Number(entry.symptoms?.[shadeMode] || 0)).bg;
         }
       }
 
       cell.style.background = bg;
       cell.innerHTML = `<div class="day-num">${d.getDate()}</div><div class="day-dot"></div>`;
       cell.addEventListener("click", () => openDayModal(iso));
-
       calendarGrid.appendChild(cell);
     }
   }
@@ -385,50 +483,51 @@
     calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
     refreshCalendar();
   });
+
   nextMonth.addEventListener("click", () => {
     calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
     refreshCalendar();
   });
+
   calShadeMode.addEventListener("change", refreshCalendar);
 
   // -------------------------
   // Day modal editor
   // -------------------------
-  const modalState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
   let modalDateISO = null;
 
-  function buildModalSymptomGrid() {
-    modalSymptomGrid.innerHTML = SYMPTOMS.map(s => `
-      <div class="symptom">
-        <div class="symptom-top">
-          <div class="symptom-name">${s.label}</div>
-          <div class="symptom-cap">0–3</div>
-        </div>
-        <div class="scale">
-          <input type="range" min="0" max="3" step="1" value="0" data-msym="${s.key}" aria-label="${s.label}">
-          <div class="scale-val" id="mval-${s.key}">0</div>
-        </div>
-      </div>
-    `).join("");
-
-    modalSymptomGrid.addEventListener("input", (e) => {
-      const t = e.target;
-      if (!(t instanceof HTMLInputElement)) return;
-      if (t.type !== "range") return;
-      const key = t.dataset.msym;
-      if (!key) return;
-      const v = clamp(Number(t.value), 0, 3);
-      modalState[key] = v;
-      const valEl = document.getElementById(`mval-${key}`);
-      if (valEl) valEl.textContent = String(v);
-      modalScore.textContent = String(sumScore(modalState));
-    });
+  function updateModalScore() {
+    modalScore.textContent = String(sumScore(modalState));
   }
 
-  function showModal(show) {
-    modalBackdrop.hidden = !show;
-    dayModal.hidden = !show;
-    if (!show) {
+  function setModalUI(entry) {
+    const symptoms = entry?.symptoms || {};
+    SYMPTOMS.forEach(s => {
+      const v = clamp(Number(symptoms[s.key] ?? 0), 0, 3);
+      modalState[s.key] = v;
+
+      const input = modalSymptomGroups.querySelector(`input[data-msym="${s.key}"]`);
+      const pill = document.getElementById(`m-pill-${s.key}`);
+      const valEl = document.getElementById(`m-val-${s.key}`);
+
+      if (input) input.value = String(v);
+      if (pill) pill.textContent = levelLabel(v);
+      if (valEl) valEl.textContent = `${v} · ${levelLabel(v)}`;
+    });
+
+    modalPeriod.checked = !!entry?.period;
+    modalNotes.value = entry?.notes || "";
+    updateModalScore();
+  }
+
+  function showModal(showDayModal, showInstallModal) {
+    const showAny = !!(showDayModal || showInstallModal);
+    modalBackdrop.hidden = !showAny;
+
+    dayModal.hidden = !showDayModal;
+    installModal.hidden = !showInstallModal;
+
+    if (!showDayModal) {
       modalStatus.textContent = "";
       modalDateISO = null;
     }
@@ -436,33 +535,39 @@
 
   async function openDayModal(dateISO) {
     modalDateISO = dateISO;
-    modalTitle.textContent = `Edit Day`;
     modalSub.textContent = dateISO;
 
     const entry = await getLog(dateISO);
-    const symptoms = entry?.symptoms || {};
-    SYMPTOMS.forEach(s => {
-      const v = clamp(Number(symptoms[s.key] ?? 0), 0, 3);
-      modalState[s.key] = v;
-      const input = modalSymptomGrid.querySelector(`input[data-msym="${s.key}"]`);
-      const valEl = document.getElementById(`mval-${s.key}`);
-      if (input) input.value = String(v);
-      if (valEl) valEl.textContent = String(v);
-    });
+    setModalUI(entry);
 
-    modalPeriod.checked = !!entry?.period;
-    modalNotes.value = entry?.notes || "";
-    modalScore.textContent = String(sumScore(modalState));
     modalStatus.textContent = entry ? "Loaded entry." : "No entry yet. Add one and save.";
-    showModal(true);
+    showModal(true, false);
   }
 
-  modalClose.addEventListener("click", () => showModal(false));
-  modalBackdrop.addEventListener("click", () => {
-    // close whichever modal is open
-    if (!dayModal.hidden) showModal(false);
-    if (!installModal.hidden) toggleInstallModal(false);
-  });
+  function wireModalSliders() {
+    modalSymptomGroups.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      if (t.type !== "range") return;
+
+      const key = t.dataset.msym;
+      if (!key) return;
+
+      const v = clamp(Number(t.value), 0, 3);
+      modalState[key] = v;
+
+      const pill = document.getElementById(`m-pill-${key}`);
+      const valEl = document.getElementById(`m-val-${key}`);
+
+      if (pill) pill.textContent = levelLabel(v);
+      if (valEl) valEl.textContent = `${v} · ${levelLabel(v)}`;
+
+      updateModalScore();
+    });
+  }
+
+  modalClose.addEventListener("click", () => showModal(false, false));
+  modalBackdrop.addEventListener("click", () => showModal(false, false));
 
   modalSave.addEventListener("click", async () => {
     if (!modalDateISO) return;
@@ -482,11 +587,12 @@
 
     await putLog(entry);
     modalStatus.textContent = "Saved.";
+
+    await refreshAllLogsCache();
     refreshCalendar();
     refreshInsights();
     refreshReport();
 
-    // If the main check-in date matches, refresh that form too
     if (logDate.value === modalDateISO) await loadIntoCheckin(modalDateISO);
   });
 
@@ -497,9 +603,12 @@
 
     await deleteLog(modalDateISO);
     modalStatus.textContent = "Deleted entry.";
+
+    await refreshAllLogsCache();
     refreshCalendar();
     refreshInsights();
     refreshReport();
+
     if (logDate.value === modalDateISO) await loadIntoCheckin(modalDateISO);
   });
 
@@ -528,6 +637,7 @@
       const d = parseISO(l.date);
       return d >= startOfDay(last7Start) && d <= endOfDay(now);
     });
+
     const prev7 = logs.filter(l => {
       const d = parseISO(l.date);
       return d >= startOfDay(prev7Start) && d <= endOfDay(prev7End);
@@ -562,29 +672,28 @@
 
     if (!last30.length) {
       topSymptomsEl.textContent = "No data in the last 30 days.";
-    } else {
-      const sums = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
-      last30.forEach(l => {
-        SYMPTOMS.forEach(s => sums[s.key] += Number(l.symptoms?.[s.key] || 0));
-      });
-
-      const avgs = SYMPTOMS.map(s => ({
-        label: s.label,
-        avg: sums[s.key] / last30.length
-      })).sort((a,b) => b.avg - a.avg);
-
-      const top = avgs.slice(0, 6).filter(x => x.avg > 0);
-      topSymptomsEl.innerHTML = top.length
-        ? top.map(x => `<div class="card"><div class="card-k">${x.label}</div><div class="card-v">${format(x.avg, 2)}</div></div>`).join("")
-        : `<div class="muted">All logged values are zero in the last 30 days.</div>`;
+      trendChart.innerHTML = "";
+      return;
     }
 
-    // Trend chart (last 30 days; sparse entries allowed)
+    const sums = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+    last30.forEach(l => {
+      SYMPTOMS.forEach(s => sums[s.key] += Number(l.symptoms?.[s.key] || 0));
+    });
+
+    const avgs = SYMPTOMS
+      .map(s => ({ label: s.label, avg: sums[s.key] / last30.length }))
+      .sort((a,b) => b.avg - a.avg);
+
+    const top = avgs.slice(0, 6).filter(x => x.avg > 0);
+    topSymptomsEl.innerHTML = top.length
+      ? top.map(x => `<div class="card"><div class="card-k">${x.label}</div><div class="card-v">${format(x.avg, 2)}</div></div>`).join("")
+      : `<div class="muted">All logged values are zero in the last 30 days.</div>`;
+
     renderTrendChart(last30);
   }
 
   function renderTrendChart(entries) {
-    // Build day series for last 30 days including blanks
     const now = new Date();
     const start = new Date(now); start.setDate(now.getDate() - 29);
     const map = new Map(entries.map(e => [e.date, Number(e.score ?? sumScore(e.symptoms)) || 0]));
@@ -598,8 +707,7 @@
     }
 
     const w = 860, h = 160, pad = 18;
-    const max = 30;
-    const min = 0;
+    const max = 30, min = 0;
 
     const xs = (i) => pad + (i * (w - pad*2) / (series.length - 1));
     const ys = (v) => {
@@ -607,7 +715,6 @@
       return (h - pad) - t * (h - pad*2);
     };
 
-    // Path with gaps: start new segment when val is null
     let path = "";
     let started = false;
     series.forEach((p, i) => {
@@ -622,28 +729,26 @@
       }
     });
 
-    // Points
     const circles = series.map((p,i) => {
       if (p.val === null) return "";
       const x = xs(i), y = ys(p.val);
-      return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.6" fill="rgba(212,175,55,.85)"/>`;
+      return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.6" fill="rgba(184,146,42,.90)"/>`;
     }).join("");
 
-    // Grid lines at 0,10,20,30
     const grid = [0,10,20,30].map(v => {
       const y = ys(v);
-      return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="rgba(185,183,199,.18)" stroke-width="1" />`;
+      return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="rgba(185,189,208,.18)" stroke-width="1" />`;
     }).join("");
 
     trendChart.innerHTML = `
       <svg viewBox="0 0 ${w} ${h}" width="100%" height="160" aria-hidden="true">
         ${grid}
-        <path d="${path}" fill="none" stroke="rgba(193,18,31,.75)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="${path}" fill="none" stroke="rgba(193,18,31,.78)" stroke-width="2.2" stroke-linecap="round"/>
         ${circles}
-        <text x="${pad}" y="${pad}" fill="rgba(185,183,199,.7)" font-size="12">0</text>
-        <text x="${pad}" y="${ys(10) - 6}" fill="rgba(185,183,199,.7)" font-size="12">10</text>
-        <text x="${pad}" y="${ys(20) - 6}" fill="rgba(185,183,199,.7)" font-size="12">20</text>
-        <text x="${pad}" y="${ys(30) - 6}" fill="rgba(185,183,199,.7)" font-size="12">30</text>
+        <text x="${pad}" y="${pad}" fill="rgba(185,189,208,.70)" font-size="12">0</text>
+        <text x="${pad}" y="${ys(10) - 6}" fill="rgba(185,189,208,.70)" font-size="12">10</text>
+        <text x="${pad}" y="${ys(20) - 6}" fill="rgba(185,189,208,.70)" font-size="12">20</text>
+        <text x="${pad}" y="${ys(30) - 6}" fill="rgba(185,189,208,.70)" font-size="12">30</text>
       </svg>
     `;
   }
@@ -681,7 +786,6 @@
     const entries = filtered.length;
     const avgScore = scores.reduce((a,b)=>a+b,0) / entries;
     const maxScore = Math.max(...scores);
-
     const periodDays = filtered.filter(l => !!l.period).length;
 
     rEntries.textContent = String(entries);
@@ -693,7 +797,8 @@
     const sums = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
     filtered.forEach(l => SYMPTOMS.forEach(s => sums[s.key] += Number(l.symptoms?.[s.key] || 0)));
 
-    const avgs = SYMPTOMS.map(s => ({ label: s.label, avg: sums[s.key] / entries }))
+    const avgs = SYMPTOMS
+      .map(s => ({ label: s.label, avg: sums[s.key] / entries }))
       .sort((a,b) => b.avg - a.avg);
 
     const top = avgs.slice(0, 8).filter(x => x.avg > 0);
@@ -701,9 +806,10 @@
       ? top.map(x => `<div class="card"><div class="card-k">${x.label}</div><div class="card-v">${format(x.avg, 2)}</div></div>`).join("")
       : `<div class="muted">No symptoms logged (all zeros) in this range.</div>`;
 
-    // Cycle intervals: detect period starts from consecutive period days
+    // Cycle intervals (period starts)
     const periodStarts = [];
     let prevWasPeriod = false;
+
     filtered
       .slice()
       .sort((a,b)=>a.date.localeCompare(b.date))
@@ -727,7 +833,7 @@
       `;
     }
 
-    // Notes (recent)
+    // Notes
     const noted = filtered
       .filter(l => (l.notes || "").trim().length > 0)
       .slice(-8)
@@ -743,23 +849,19 @@
       : `<div class="muted">No notes in this range.</div>`;
   }
 
-  reportRange.addEventListener("change", refreshReport);
-  printBtn.addEventListener("click", () => window.print());
+  // Simple HTML escape for notes
+  function escapeHTML(str) {
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
 
   // -------------------------
   // Export / Import
   // -------------------------
-  function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
   exportJsonBtn.addEventListener("click", async () => {
     await refreshAllLogsCache();
     const payload = {
@@ -776,20 +878,14 @@
 
   exportCsvBtn.addEventListener("click", async () => {
     await refreshAllLogsCache();
-    const headers = [
-      "date","score","period","notes",
-      ...SYMPTOMS.map(s => s.key)
-    ];
+    const headers = ["date","score","period","notes", ...SYMPTOMS.map(s => s.key)];
 
     const rows = allLogsCache.map(l => {
-      const base = [
-        l.date,
-        String(Number(l.score ?? sumScore(l.symptoms)) || 0),
-        l.period ? "1" : "0",
-        `"${String(l.notes || "").replaceAll('"','""')}"`
-      ];
+      const score = String(Number(l.score ?? sumScore(l.symptoms)) || 0);
+      const period = l.period ? "1" : "0";
+      const notes = `"${String(l.notes || "").replaceAll('"','""')}"`;
       const symVals = SYMPTOMS.map(s => String(Number(l.symptoms?.[s.key] || 0)));
-      return [...base, ...symVals].join(",");
+      return [l.date, score, period, notes, ...symVals].join(",");
     });
 
     const csv = [headers.join(","), ...rows].join("\n");
@@ -807,6 +903,7 @@
   importFile.addEventListener("change", async () => {
     const file = importFile.files?.[0];
     if (!file) return;
+
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
@@ -816,7 +913,6 @@
       let imported = 0;
       for (const l of logs) {
         if (!l?.date || typeof l.date !== "string") continue;
-        // Validate ISO-ish YYYY-MM-DD
         if (!/^\d{4}-\d{2}-\d{2}$/.test(l.date)) continue;
 
         const symptoms = {};
@@ -847,8 +943,10 @@
   wipeBtn.addEventListener("click", async () => {
     const ok = confirm("Delete all PeriPath data on this device? This cannot be undone.");
     if (!ok) return;
+
     await clearAll();
     dataStatus.textContent = "All data deleted.";
+
     await refreshAllLogsCache();
     resetCheckinUI();
     refreshCalendar();
@@ -857,11 +955,10 @@
   });
 
   // -------------------------
-  // Offline/online badge
+  // Offline badge
   // -------------------------
   function updateOfflineBadge() {
-    const offline = !navigator.onLine;
-    offlineBadge.hidden = !offline;
+    offlineBadge.hidden = navigator.onLine;
   }
   window.addEventListener("online", updateOfflineBadge);
   window.addEventListener("offline", updateOfflineBadge);
@@ -869,23 +966,23 @@
   // -------------------------
   // Install help modal
   // -------------------------
-  function toggleInstallModal(show) {
-    modalBackdrop.hidden = !show;
-    installModal.hidden = !show;
-  }
-  installHelpBtn.addEventListener("click", () => toggleInstallModal(true));
-  installClose.addEventListener("click", () => toggleInstallModal(false));
+  function openInstallModal() { showModal(false, true); }
+  function closeInstallModal() { showModal(false, false); }
+
+  installHelpBtn.addEventListener("click", openInstallModal);
+  installClose.addEventListener("click", closeInstallModal);
 
   // -------------------------
-  // Misc buttons
+  // Today button
   // -------------------------
   todayBtn.addEventListener("click", async () => {
     const iso = toISO(new Date());
     logDate.value = iso;
     await loadIntoCheckin(iso);
-    // jump calendar to current month too
+
     calCursor = new Date();
-    refreshCalendar();
+    await refreshCalendar();
+
     setView("checkin");
   });
 
@@ -911,13 +1008,17 @@
   resetBtn.addEventListener("click", resetCheckinUI);
 
   // -------------------------
-  // Service worker register
+  // Report handlers
+  // -------------------------
+  reportRange.addEventListener("change", refreshReport);
+  printBtn.addEventListener("click", () => window.print());
+
+  // -------------------------
+  // Service worker
   // -------------------------
   function registerSW() {
     if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js").catch(() => {
-      // app still works online if SW fails
-    });
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
   // -------------------------
@@ -927,20 +1028,23 @@
     updateOfflineBadge();
     registerSW();
 
-    populateShadeModeSelect();
-    buildCheckinGrid();
-    buildModalSymptomGrid();
+    // Build grouped UIs
+    buildGroups(symptomGroups, "c");
+    buildGroups(modalSymptomGroups, "m");
 
-    // default today
+    wireCheckinSliders();
+    wireModalSliders();
+
+    populateShadeModeSelect();
+
     const today = toISO(new Date());
     logDate.value = today;
     await loadIntoCheckin(today);
 
-    // prime caches + views
     await refreshAllLogsCache();
-    refreshCalendar();
-    refreshInsights();
-    refreshReport();
+    await refreshCalendar();
+    await refreshInsights();
+    await refreshReport();
   }
 
   init();
