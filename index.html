@@ -1,68 +1,798 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0b0c10" />
-  <title>PeriPath — Symptom & Cycle Tracker</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b0b14"/>
+  <title>PeriPath — Fun, Private Perimenopause Tracker</title>
+  <meta name="description" content="PeriPath is a fun, private, offline-friendly symptom & cycle tracker for perimenopause/menopause. No account. Data stays on your device."/>
 
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css" />
-  <meta name="description" content="PeriPath is a free, privacy-first symptom & cycle tracker that works offline. No login. Data stays on your device." />
+  <style>
+    :root{
+      /* Aesthetic palette (distinct from Flo) */
+      --bg0:#070712;
+      --bg1:#0b1024;
+
+      --glass: rgba(255,255,255,.10);
+      --glass2: rgba(255,255,255,.14);
+      --stroke: rgba(255,255,255,.16);
+
+      --text:#fbfbff;
+      --muted: rgba(251,251,255,.72);
+
+      --pink:#ff2f87;
+      --violet:#7c3aed;
+      --aqua:#19d3ff;
+      --lime:#7CFF6B;
+      --amber:#ffbf2f;
+      --danger:#ff5a5f;
+
+      --shadow: 0 18px 56px rgba(0,0,0,.55);
+      --shadow2: 0 10px 26px rgba(0,0,0,.35);
+
+      --r:22px;
+      --r2:16px;
+
+      --tap: 44px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(980px 620px at 14% 12%, rgba(255,47,135,.28), transparent 62%),
+        radial-gradient(860px 640px at 88% 16%, rgba(25,211,255,.22), transparent 60%),
+        radial-gradient(980px 760px at 56% 112%, rgba(124,58,237,.22), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    /* animated aura */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:-35%;
+      background: conic-gradient(from 180deg,
+        rgba(255,47,135,.22),
+        rgba(25,211,255,.18),
+        rgba(124,58,237,.22),
+        rgba(255,191,47,.12),
+        rgba(124,255,107,.10),
+        rgba(255,47,135,.22)
+      );
+      filter: blur(70px);
+      opacity:.55;
+      animation: swirl 18s linear infinite;
+      z-index:-2;
+    }
+    @keyframes swirl{
+      from{transform: rotate(0deg) scale(1.05)}
+      to{transform: rotate(360deg) scale(1.05)}
+    }
+
+    /* subtle grain */
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+      opacity:.18;
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    h1,h2,h3{margin:0}
+    h1{font-size:22px; letter-spacing:.2px}
+    h2{font-size:16px}
+    h3{font-size:14px}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .tiny{font-size:11px}
+    .list{line-height:1.6}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+
+    /* Top bar */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(8,10,18,.50);
+      backdrop-filter: blur(16px);
+    }
+    .brand{
+      display:flex; gap:12px; align-items:center;
+      min-width: 0;
+    }
+    .logo{
+      width:46px; height:46px; border-radius:18px;
+      background: linear-gradient(135deg, rgba(255,47,135,.95), rgba(124,58,237,.88));
+      box-shadow: var(--shadow2);
+      position:relative;
+      display:grid; place-items:center;
+      flex:0 0 auto;
+    }
+    .logo::after{
+      content:"";
+      position:absolute; inset:4px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .logo svg{opacity:.95}
+    .brandText{min-width:0}
+    .brandName{
+      font-weight:950; letter-spacing:.4px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .brandTag{
+      font-size:12px; color:var(--muted);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    .topActions{
+      display:flex; gap:10px; align-items:center;
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: rgba(251,251,255,.85);
+      font-size:12px;
+      backdrop-filter: blur(10px);
+    }
+    .badge.off{border-color: rgba(255,191,47,.35); background: rgba(255,191,47,.10)}
+    .iconBtn{
+      min-height: var(--tap);
+      padding:10px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      cursor:pointer;
+      display:flex; gap:8px; align-items:center;
+      backdrop-filter: blur(10px);
+    }
+    .iconBtn:hover{filter: brightness(1.06)}
+    .iconBtn:active{transform: translateY(1px)}
+    .icon{
+      width:16px; height:16px; display:inline-block;
+    }
+
+    /* Layout */
+    .layout{
+      display:grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - 74px);
+    }
+    .rail{
+      padding:14px;
+      border-right:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      backdrop-filter: blur(12px);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .navBtn{
+      width:100%;
+      min-height: var(--tap);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:12px 12px;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .navBtn:hover{filter: brightness(1.08)}
+    .navBtn:active{transform: translateY(1px)}
+    .navBtn.active{
+      border-color: rgba(25,211,255,.30);
+      background:
+        linear-gradient(135deg, rgba(25,211,255,.16), rgba(124,58,237,.12)),
+        rgba(255,255,255,.06);
+      box-shadow: 0 14px 38px rgba(0,0,0,.30);
+    }
+    .navEmoji{
+      width:34px; height:34px;
+      border-radius: 14px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+      flex: 0 0 auto;
+    }
+    .navLabel{font-weight:950}
+    .navSub{font-size:12px; color:var(--muted); margin-top:2px}
+    .railFoot{margin-top:auto; padding-top:8px}
+
+    .main{
+      padding: 14px 14px 94px;
+      max-width: 1180px;
+    }
+
+    .view{display:none}
+    .view.active{display:block}
+
+    /* Panels / cards */
+    .panel{
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.07);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin: 14px 0;
+      position:relative;
+      overflow:hidden;
+    }
+    .panel::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background: radial-gradient(520px 240px at 18% 8%, rgba(255,47,135,.18), transparent 60%),
+                  radial-gradient(520px 280px at 90% 14%, rgba(25,211,255,.14), transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
+    .panel > *{position:relative; z-index:1}
+
+    .panelHead{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .panelActions{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+    }
+
+    .row{display:flex; align-items:center}
+    .between{justify-content:space-between}
+    .wrap{flex-wrap:wrap}
+    .gap{gap:10px}
+    .stack{display:flex; flex-direction:column; gap:8px}
+
+    .field{display:flex; flex-direction:column; gap:6px}
+    .label{font-size:12px; color:var(--muted)}
+    input[type="date"], select, textarea{
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding: 12px 12px;
+      outline:none;
+      backdrop-filter: blur(10px);
+    }
+    input[type="date"]:focus, select:focus, textarea:focus{
+      border-color: rgba(25,211,255,.32);
+      box-shadow: 0 0 0 4px rgba(25,211,255,.10);
+    }
+    textarea{resize: vertical}
+
+    .btn{
+      min-height: var(--tap);
+      padding: 10px 14px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      cursor:pointer;
+      backdrop-filter: blur(10px);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .btn:hover{filter: brightness(1.08)}
+    .btn:active{transform: translateY(1px)}
+    .btnPrimary{
+      border-color: rgba(255,47,135,.34);
+      background: linear-gradient(135deg, rgba(255,47,135,.92), rgba(124,58,237,.80));
+      box-shadow: 0 14px 34px rgba(0,0,0,.30);
+    }
+    .btnDanger{
+      border-color: rgba(255,90,95,.40);
+      background: rgba(255,90,95,.14);
+      color: rgba(255,235,236,.95);
+    }
+
+    .status{min-height:18px; margin-top:10px; color:var(--muted)}
+
+    /* Score pill */
+    .scorePill{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      padding: 10px 12px;
+      min-width: 172px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.20);
+    }
+    .scoreK{font-size:12px; color:var(--muted)}
+    .scoreV{
+      display:flex; align-items:baseline; gap:6px;
+      font-size:20px; font-weight:950; letter-spacing:.2px;
+    }
+    .scoreMax{font-size:12px; color:var(--muted)}
+
+    /* Fun “sparkle” chip */
+    .hintChip{
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 8px 10px;
+      font-size:12px;
+      color: var(--muted);
+      display:flex; align-items:center; gap:8px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(25,211,255,.95), rgba(255,47,135,.95));
+      box-shadow: 0 0 0 4px rgba(25,211,255,.10);
+    }
+
+    /* Toggle */
+    .toggle{
+      display:flex; align-items:center; gap:10px;
+      user-select:none;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 10px 12px;
+    }
+    .toggle input{
+      width: 18px; height: 18px;
+      accent-color: var(--pink);
+    }
+
+    /* Symptom groups */
+    .groups{display:flex; flex-direction:column; gap:14px; margin: 12px 0 8px;}
+    .group{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
+    .groupHead{
+      display:flex; justify-content:space-between; align-items:flex-start;
+      gap:10px; margin-bottom:10px;
+    }
+    .groupTitle{font-weight:950}
+    .groupSub{color:var(--muted); font-size:12px; line-height:1.45}
+
+    .symGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+      gap:12px;
+    }
+
+    .symCard{
+      border-radius: var(--r2);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.20);
+      position:relative;
+      overflow:hidden;
+    }
+    .symCard::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(360px 160px at 20% 0%, rgba(255,47,135,.16), transparent 60%),
+        radial-gradient(360px 180px at 95% 15%, rgba(25,211,255,.12), transparent 62%);
+      opacity:.85;
+      pointer-events:none;
+    }
+    .symCard > *{position:relative; z-index:1}
+
+    .symTop{
+      display:flex; justify-content:space-between; align-items:flex-start;
+      gap:10px; margin-bottom:10px;
+    }
+    .symName{font-weight:950}
+    .symBadge{
+      font-size:11px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: rgba(251,251,255,.86);
+      white-space:nowrap;
+    }
+
+    /* Tap chips (replaces sliders) */
+    .chipRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .chip{
+      min-height: 38px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      color: rgba(251,251,255,.86);
+      cursor:pointer;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition: transform .08s ease, filter .08s ease;
+      user-select:none;
+    }
+    .chip:hover{filter: brightness(1.08)}
+    .chip:active{transform: translateY(1px)}
+    .chip.active{
+      border-color: rgba(25,211,255,.28);
+      background: linear-gradient(135deg, rgba(25,211,255,.22), rgba(124,58,237,.16));
+      box-shadow: 0 12px 26px rgba(0,0,0,.22);
+    }
+    .chip .spark{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(255,255,255,.22);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .chip.active .spark{
+      background: linear-gradient(135deg, rgba(255,47,135,.95), rgba(25,211,255,.95));
+      box-shadow: 0 0 0 4px rgba(255,47,135,.12);
+      border-color: rgba(255,255,255,.18);
+    }
+
+    /* Sticky actions */
+    .stickyActions{
+      position: sticky;
+      bottom: 0;
+      margin-top: 12px;
+      padding-top: 12px;
+      background: linear-gradient(180deg, transparent, rgba(7,7,18,.62) 25%, rgba(7,7,18,.92));
+      z-index: 3;
+    }
+    .stickyInner{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      padding: 10px 0 4px;
+    }
+    @media (max-width: 980px){
+      .stickyInner{justify-content:space-between}
+      .stickyInner .btn{flex:1; justify-content:center}
+    }
+
+    /* Segmented control */
+    .seg{
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      display:inline-flex;
+      padding:4px;
+      gap:4px;
+    }
+    .segBtn{
+      min-height: 36px;
+      border-radius: 999px;
+      border:1px solid transparent;
+      background: transparent;
+      color: rgba(251,251,255,.80);
+      cursor:pointer;
+      padding: 8px 10px;
+      font-size:12px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+    .segBtn.active{
+      background: linear-gradient(135deg, rgba(255,47,135,.22), rgba(25,211,255,.16));
+      border-color: rgba(255,255,255,.12);
+      color: rgba(251,251,255,.92);
+      box-shadow: 0 10px 20px rgba(0,0,0,.18);
+    }
+
+    /* Calendar month grid */
+    .calendarGrid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    .dow{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:10px;
+      font-size:12px;
+      color: var(--muted);
+      margin-top:10px;
+    }
+    .day{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding:10px;
+      min-height: 72px;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .day:hover{filter: brightness(1.08)}
+    .day:active{transform: translateY(1px)}
+    .day.dim{opacity:.45}
+    .dayNum{font-weight:950; font-size:12px}
+    .dayDot{
+      width:10px; height:10px; border-radius:999px;
+      position:absolute; right:10px; bottom:10px;
+      background: linear-gradient(135deg, rgba(25,211,255,.95), rgba(255,47,135,.95));
+      box-shadow: 0 0 0 4px rgba(25,211,255,.10);
+      opacity:0;
+    }
+    .day.hasData .dayDot{opacity:1}
+    .day.period{
+      outline: 2px solid rgba(255,47,135,.35);
+    }
+
+    /* Agenda list */
+    .agenda{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+    .agendaCard{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      cursor:pointer;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .agendaCard:hover{filter: brightness(1.08)}
+    .agendaCard:active{transform: translateY(1px)}
+    .agendaLeft{display:flex; flex-direction:column; gap:6px}
+    .agendaDate{font-weight:950}
+    .agendaMeta{font-size:12px; color: var(--muted); line-height:1.35}
+    .pill{
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding: 6px 10px;
+      font-size:12px;
+      white-space:nowrap;
+      height: fit-content;
+    }
+    .pill.pink{border-color: rgba(255,47,135,.30); background: rgba(255,47,135,.12)}
+    .pill.aqua{border-color: rgba(25,211,255,.30); background: rgba(25,211,255,.10)}
+    .pill.amber{border-color: rgba(255,191,47,.30); background: rgba(255,191,47,.10)}
+
+    /* Insights chart */
+    .chart{
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+      margin-top:10px;
+      overflow:hidden;
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+    .kpi{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+    }
+    .kpiK{color:var(--muted); font-size:12px}
+    .kpiV{font-weight:950; font-size:18px; margin-top:6px}
+
+    .cardGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+    .miniCard{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
+    .miniK{color:var(--muted); font-size:12px}
+    .miniV{font-weight:950; font-size:16px; margin-top:6px}
+
+    /* Report */
+    .reportHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .reportTitle{font-weight:950}
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    .box{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
+
+    /* Modals */
+    .backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.60);
+      z-index:90;
+      display:none;
+    }
+    .modal{
+      position:fixed;
+      left:50%; top:50%;
+      transform: translate(-50%,-50%);
+      width: min(980px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      overflow:auto;
+      z-index:100;
+      border-radius: 24px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(12,12,24,.70);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      display:none;
+    }
+    .modalHead{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .modalBody{padding:14px}
+    .modalTitle{font-weight:950}
+    .closeX{
+      border-radius:999px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      cursor:pointer;
+    }
+
+    /* Mobile bottom nav */
+    @media (max-width: 980px){
+      .layout{grid-template-columns: 1fr}
+      .rail{
+        position:fixed;
+        left:0; right:0; bottom:0;
+        z-index:60;
+        padding:10px 10px 12px;
+        border-right:none;
+        border-top:1px solid rgba(255,255,255,.10);
+        background: rgba(8,10,18,.58);
+        backdrop-filter: blur(16px);
+        display:grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap:8px;
+      }
+      .navBtn{
+        flex-direction:column;
+        justify-content:center;
+        gap:6px;
+        padding:10px 8px;
+        border-radius: 18px;
+      }
+      .navEmoji{width:32px; height:32px; border-radius: 14px}
+      .navLabel{font-size:12px}
+      .navSub{display:none}
+      .railFoot{display:none}
+      .main{padding-bottom: 132px}
+      .split{grid-template-columns: 1fr}
+    }
+
+    /* Print */
+    @media print{
+      body{background:#fff; color:#000}
+      .topbar, .rail, .stickyActions, .btn, .iconBtn, .badge, .hintChip, .toggle{display:none !important}
+      .panel,.group,.symCard,.kpi,.miniCard,.box,.agendaCard{box-shadow:none !important; background:#fff !important; border:1px solid #ddd !important}
+      .muted{color:#333 !important}
+      .layout{grid-template-columns: 1fr}
+      .view{display:block !important}
+      #view-checkin, #view-calendar, #view-insights, #view-settings{display:none !important}
+      #view-report{display:block !important}
+    }
+  </style>
 </head>
 
 <body>
   <header class="topbar">
-    <div class="topbar-left">
-      <div class="mark" aria-hidden="true">
-        <span class="mark-ring"></span>
-        <span class="mark-letter">P</span>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2c2.8 2.7 5.5 5.7 5.5 9.2A5.5 5.5 0 1 1 6.5 11.2C6.5 7.7 9.2 4.7 12 2Z" stroke="rgba(255,255,255,.92)" stroke-width="1.6"/>
+          <path d="M8.4 14.2c1.2 1 2.5 1.5 3.6 1.5 1.2 0 2.5-.5 3.6-1.5" stroke="rgba(255,255,255,.72)" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
       </div>
-
-      <div class="brand">
-        <div class="brand-name">PeriPath</div>
-        <div class="brand-tag">Private tracking. Offline-ready. No account.</div>
+      <div class="brandText">
+        <div class="brandName">PeriPath</div>
+        <div class="brandTag">Fun, private tracking — no account needed</div>
       </div>
     </div>
 
-    <div class="topbar-right">
-      <div id="offlineBadge" class="badge" hidden>Offline</div>
-      <button id="todayBtn" class="btn btn-ghost" type="button">Today</button>
-      <button id="installHelpBtn" class="btn btn-ghost" type="button">Add to Home</button>
+    <div class="topActions">
+      <div id="offlineBadge" class="badge off" style="display:none;">Offline</div>
+      <button id="todayBtn" class="iconBtn" type="button" title="Jump to today">
+        <span class="icon" aria-hidden="true">⟡</span><span class="small">Today</span>
+      </button>
+      <button id="helpBtn" class="iconBtn" type="button" title="Add to Home Screen">
+        <span class="icon" aria-hidden="true">＋</span><span class="small">Add to Home</span>
+      </button>
     </div>
   </header>
 
   <div class="layout">
     <aside class="rail" aria-label="Navigation">
-      <button class="nav active" data-view="checkin" type="button">
-        <span class="nav-ico">✶</span>
-        <span class="nav-label">Check-In</span>
+      <button class="navBtn active" data-view="checkin" type="button">
+        <span class="navEmoji">✨</span>
+        <span>
+          <div class="navLabel">Check-In</div>
+          <div class="navSub">Tap chips, save fast</div>
+        </span>
+      </button>
+      <button class="navBtn" data-view="calendar" type="button">
+        <span class="navEmoji">🗓️</span>
+        <span>
+          <div class="navLabel">Calendar</div>
+          <div class="navSub">Month + Agenda</div>
+        </span>
+      </button>
+      <button class="navBtn" data-view="insights" type="button">
+        <span class="navEmoji">📈</span>
+        <span>
+          <div class="navLabel">Insights</div>
+          <div class="navSub">Trends & top symptoms</div>
+        </span>
+      </button>
+      <button class="navBtn" data-view="report" type="button">
+        <span class="navEmoji">🧾</span>
+        <span>
+          <div class="navLabel">Report</div>
+          <div class="navSub">Print / Save PDF</div>
+        </span>
+      </button>
+      <button class="navBtn" data-view="settings" type="button">
+        <span class="navEmoji">⚙️</span>
+        <span>
+          <div class="navLabel">Settings</div>
+          <div class="navSub">Export / Import</div>
+        </span>
       </button>
 
-      <button class="nav" data-view="calendar" type="button">
-        <span class="nav-ico">▦</span>
-        <span class="nav-label">Calendar</span>
-      </button>
-
-      <button class="nav" data-view="insights" type="button">
-        <span class="nav-ico">◔</span>
-        <span class="nav-label">Insights</span>
-      </button>
-
-      <button class="nav" data-view="report" type="button">
-        <span class="nav-ico">≡</span>
-        <span class="nav-label">Report</span>
-      </button>
-
-      <button class="nav" data-view="settings" type="button">
-        <span class="nav-ico">⚙</span>
-        <span class="nav-label">Settings</span>
-      </button>
-
-      <div class="rail-foot">
-        <div class="tiny muted">
-          Symptom Load Score = sum of 10 symptom ratings (0–3) → 0–30. Not diagnostic.
-        </div>
+      <div class="railFoot tiny muted">
+        Symptom Score = sum of each symptom rating (0–3). This app is not diagnostic.  [oai_citation:1‡ACOG](https://www.acog.org/womens-health/faqs/the-menopause-years?utm_source=chatgpt.com)
       </div>
     </aside>
 
@@ -70,67 +800,60 @@
       <!-- CHECK-IN -->
       <section id="view-checkin" class="view active" aria-label="Daily check-in">
         <div class="panel">
-          <div class="panel-head">
-            <div>
+          <div class="panelHead">
+            <div class="stack">
               <h1>Daily Check-In</h1>
-              <div class="muted">
-                A quick snapshot of your day. Patterns matter more than perfection.
-              </div>
+              <div class="muted">Quick taps. Real patterns. Zero judgment.</div>
+              <div class="hintChip"><span class="dot" aria-hidden="true"></span> Tap a level for each symptom. Save when you’re done.</div>
             </div>
 
-            <div class="panel-actions">
+            <div class="panelActions">
               <div class="field">
                 <label class="label" for="logDate">Date</label>
-                <input id="logDate" type="date" />
+                <input id="logDate" type="date"/>
               </div>
-
-              <div class="score">
-                <div class="score-k">Symptom Load</div>
-                <div class="score-v"><span id="scoreValue">0</span><span class="muted">/30</span></div>
+              <div class="scorePill">
+                <div class="scoreK">Today’s Score</div>
+                <div class="scoreV"><span id="scoreValue">0</span> <span class="scoreMax muted">/ <span id="scoreMax">0</span></span></div>
               </div>
             </div>
           </div>
 
-          <div class="micro muted">
-            How was your body today? Use the sliders. We’ll summarize it into a score you can track over time.
-          </div>
-
-          <!-- JS injects grouped symptom cards here -->
           <div id="symptomGroups" class="groups"></div>
 
-          <div class="row between wrap">
+          <div class="row between wrap gap" style="margin-top:12px;">
             <label class="toggle">
-              <input id="periodToday" type="checkbox" />
+              <input id="periodToday" type="checkbox"/>
               <span>Period today</span>
             </label>
 
-            <div class="chip muted">
-              Scale: None · Mild · Moderate · Strong
+            <div class="hintChip">
+              <span class="dot" aria-hidden="true"></span>
+              Levels: None · Mild · Moderate · Strong
             </div>
           </div>
 
-          <div class="field">
+          <div class="field" style="margin-top:12px;">
             <label class="label" for="notes">Notes (optional)</label>
             <textarea id="notes" rows="3" placeholder="Anything you want future-you (or your clinician) to know."></textarea>
           </div>
 
           <div id="saveStatus" class="status" role="status" aria-live="polite"></div>
 
-          <!-- Sticky actions (app-like) -->
           <div class="stickyActions">
             <div class="stickyInner">
-              <button id="saveBtn" class="btn btn-primary" type="button">Save</button>
-              <button id="resetBtn" class="btn btn-ghost" type="button">Reset</button>
+              <button id="saveBtn" class="btn btnPrimary" type="button">💾 Save</button>
+              <button id="resetBtn" class="btn" type="button">↺ Reset</button>
             </div>
           </div>
         </div>
 
-        <div class="panel calm">
-          <h2>Support + safety</h2>
+        <div class="panel">
+          <h2>Clinician-friendly safety note</h2>
           <ul class="muted list">
-            <li>This app summarizes what you log; it does not diagnose.</li>
-            <li>If you have severe bleeding, chest pain, fainting, or thoughts of self-harm, seek urgent care.</li>
-            <li>Use the Report tab before appointments to share patterns clearly.</li>
+            <li>Perimenopause commonly includes cycle changes and symptoms like hot flashes/night sweats, sleep issues, mood changes, brain fog, joint/muscle discomfort, and vaginal/urinary changes.  [oai_citation:2‡ACOG](https://www.acog.org/womens-health/faqs/the-menopause-years?utm_source=chatgpt.com)</li>
+            <li>This tracker summarizes what you log; it does not diagnose.</li>
+            <li>Seek urgent care for severe bleeding, chest pain, fainting, or thoughts of self-harm.</li>
           </ul>
         </div>
       </section>
@@ -138,35 +861,36 @@
       <!-- CALENDAR -->
       <section id="view-calendar" class="view" aria-label="Calendar">
         <div class="panel">
-          <div class="panel-head">
-            <div>
+          <div class="panelHead">
+            <div class="stack">
               <h1>Calendar</h1>
-              <div class="muted">Tap any day to view or edit that entry.</div>
+              <div class="muted">Tap any day to view or edit. Use Agenda when you want a feed (less “grid”).</div>
             </div>
 
-            <div class="panel-actions">
+            <div class="panelActions">
+              <div class="seg" aria-label="Calendar view toggle">
+                <button id="calViewAgenda" class="segBtn active" type="button">Agenda</button>
+                <button id="calViewMonth" class="segBtn" type="button">Month</button>
+              </div>
+
               <div class="row gap">
-                <button id="prevMonth" class="btn btn-ghost" type="button">←</button>
-                <div id="monthLabel" class="monthLabel" aria-live="polite"></div>
-                <button id="nextMonth" class="btn btn-ghost" type="button">→</button>
+                <button id="prevMonth" class="btn" type="button">←</button>
+                <div id="monthLabel" style="font-weight:950; letter-spacing:.2px;"></div>
+                <button id="nextMonth" class="btn" type="button">→</button>
               </div>
 
-              <div class="field small">
-                <label class="label" for="calShadeMode">Shade by</label>
-                <select id="calShadeMode"></select>
+              <div class="field" style="min-width:180px;">
+                <label class="label" for="shadeMode">Color by</label>
+                <select id="shadeMode"></select>
               </div>
             </div>
           </div>
 
-          <div class="legend">
-            <div class="legend-item"><span class="swatch s0"></span><span class="muted">Low</span></div>
-            <div class="legend-item"><span class="swatch s1"></span><span class="muted">Mild</span></div>
-            <div class="legend-item"><span class="swatch s2"></span><span class="muted">Moderate</span></div>
-            <div class="legend-item"><span class="swatch s3"></span><span class="muted">High</span></div>
-            <div class="legend-item"><span class="pill pill-period">Period</span></div>
+          <div id="agendaWrap">
+            <div class="agenda" id="agendaList"></div>
           </div>
 
-          <div class="calendar">
+          <div id="monthWrap" style="display:none;">
             <div class="dow">
               <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
             </div>
@@ -178,59 +902,50 @@
       <!-- INSIGHTS -->
       <section id="view-insights" class="view" aria-label="Insights">
         <div class="panel">
-          <div class="panel-head">
-            <div>
+          <div class="panelHead">
+            <div class="stack">
               <h1>Insights</h1>
-              <div class="muted">Trends from your entries (last 30 days where available).</div>
-            </div>
-
-            <div class="panel-actions">
-              <div class="kpi">
-                <div class="kpi-k">7-day avg</div>
-                <div class="kpi-v" id="avg7">—</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-k">Prior 7-day avg</div>
-                <div class="kpi-v" id="avgPrev7">—</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-k">Trend</div>
-                <div class="kpi-v" id="trend7">—</div>
-              </div>
+              <div class="muted">Trends from your entries. Use this before appointments to talk in patterns.</div>
             </div>
           </div>
 
-          <div class="chartWrap">
-            <div class="muted small">Symptom Load trend (last 30 days)</div>
-            <div id="trendChart" class="chart" role="img" aria-label="Trend chart"></div>
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpiK">7-day average score</div>
+              <div class="kpiV" id="avg7">—</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">Prior 7-day average</div>
+              <div class="kpiV" id="avgPrev7">—</div>
+            </div>
+            <div class="kpi">
+              <div class="kpiK">Trend</div>
+              <div class="kpiV" id="trend7">—</div>
+            </div>
+          </div>
+
+          <div class="chart">
+            <div class="muted small">Score trend (last 30 days)</div>
+            <div id="trendChart" style="margin-top:8px;"></div>
           </div>
         </div>
 
         <div class="panel">
           <h2>Top symptoms (last 30 days)</h2>
-          <div id="topSymptoms" class="cards muted">No data yet.</div>
-        </div>
-
-        <div class="panel calm">
-          <h2>Therapist note</h2>
-          <div class="muted">
-            If your symptoms feel overwhelming, you’re not “behind.” You’re collecting evidence.
-            Use this app as a gentle mirror, not a judgment.
-          </div>
+          <div id="topSymptoms" class="cardGrid muted">No data yet.</div>
         </div>
       </section>
 
       <!-- REPORT -->
       <section id="view-report" class="view" aria-label="Report">
         <div class="panel">
-          <div class="panel-head">
-            <div>
+          <div class="panelHead">
+            <div class="stack">
               <h1>Report</h1>
-              <div class="muted">Designed for printing or saving as PDF for appointments.</div>
+              <div class="muted">Print or “Save as PDF” from the print dialog.</div>
             </div>
-
-            <div class="panel-actions">
-              <div class="field small">
+            <div class="panelActions">
+              <div class="field" style="min-width:170px;">
                 <label class="label" for="reportRange">Range</label>
                 <select id="reportRange">
                   <option value="30">Last 30 days</option>
@@ -238,60 +953,45 @@
                   <option value="90">Last 90 days</option>
                 </select>
               </div>
-
-              <button id="printBtn" class="btn btn-primary" type="button">Print / Save PDF</button>
+              <button id="printBtn" class="btn btnPrimary" type="button">🖨️ Print / Save PDF</button>
             </div>
           </div>
 
-          <article id="reportContent" class="report">
-            <div class="report-head">
+          <article id="reportContent">
+            <div class="reportHead">
               <div>
-                <div class="report-title">PeriPath Summary</div>
-                <div id="reportMeta" class="muted">—</div>
+                <div class="reportTitle">PeriPath Summary</div>
+                <div id="reportMeta" class="muted small">—</div>
               </div>
-              <div class="report-note muted">Self-reported summary. Not diagnostic.</div>
+              <div class="muted small">Self-reported. Not diagnostic.</div>
             </div>
 
-            <div class="report-kpis">
-              <div class="card">
-                <div class="card-k">Entries</div>
-                <div class="card-v" id="rEntries">—</div>
-              </div>
-              <div class="card">
-                <div class="card-k">Average Load</div>
-                <div class="card-v" id="rAvg">—</div>
-              </div>
-              <div class="card">
-                <div class="card-k">Highest Day</div>
-                <div class="card-v" id="rMax">—</div>
-              </div>
-              <div class="card">
-                <div class="card-k">Period Days</div>
-                <div class="card-v" id="rPeriodDays">—</div>
-              </div>
+            <div class="kpis" style="margin-top:12px;">
+              <div class="kpi"><div class="kpiK">Entries</div><div class="kpiV" id="rEntries">—</div></div>
+              <div class="kpi"><div class="kpiK">Average score</div><div class="kpiV" id="rAvg">—</div></div>
+              <div class="kpi"><div class="kpiK">Highest day</div><div class="kpiV" id="rMax">—</div></div>
+              <div class="kpi"><div class="kpiK">Period days</div><div class="kpiV" id="rPeriodDays">—</div></div>
             </div>
 
             <div class="split">
-              <section class="report-block">
+              <div class="box">
                 <h3>Top symptoms</h3>
-                <div id="rTopSymptoms" class="cards muted">—</div>
-              </section>
-
-              <section class="report-block">
-                <h3>Cycle intervals (if periods tracked)</h3>
-                <div id="rCycle" class="cards muted">—</div>
-              </section>
+                <div id="rTopSymptoms" class="cardGrid muted">—</div>
+              </div>
+              <div class="box">
+                <h3>Cycle intervals (if tracked)</h3>
+                <div id="rCycle" class="cardGrid muted">—</div>
+              </div>
             </div>
 
-            <section class="report-block">
+            <div class="box" style="margin-top:12px;">
               <h3>Recent notes</h3>
-              <div id="rNotes" class="cards muted">—</div>
-            </section>
+              <div id="rNotes" class="cardGrid muted">—</div>
+            </div>
 
-            <footer class="report-foot muted">
-              <div><strong>PeriPath</strong> stores data on this device (IndexedDB). No login required.</div>
-              <div>Symptom Load = sum of 10 symptoms (0–3) → 0–30.</div>
-            </footer>
+            <div class="muted tiny" style="margin-top:12px;">
+              Data is stored locally on this device (IndexedDB). Export from Settings if you want a backup.
+            </div>
           </article>
         </div>
       </section>
@@ -301,33 +1001,35 @@
         <div class="panel">
           <h1>Settings</h1>
 
-          <div class="two">
+          <div class="split" style="margin-top:12px;">
             <div class="box">
-              <h2>Add to Home Screen</h2>
+              <h2 style="margin-bottom:6px;">Add to Home Screen</h2>
               <div class="muted">
-                <p><strong>iPhone (Safari):</strong> Share → Add to Home Screen</p>
-                <p><strong>Android (Chrome):</strong> Menu → Install app / Add to Home screen</p>
+                <div><strong>iPhone (Safari):</strong> Share → Add to Home Screen</div>
+                <div><strong>Android (Chrome):</strong> Menu → Install app / Add to Home screen</div>
+              </div>
+              <div class="muted tiny" style="margin-top:8px;">
+                This single-file build doesn’t include a web manifest/service worker. It still works great as a bookmarked “app.”
               </div>
             </div>
 
             <div class="box">
-              <h2>Data tools</h2>
+              <h2 style="margin-bottom:6px;">Data tools</h2>
               <div class="row gap wrap">
-                <button id="exportJsonBtn" class="btn btn-ghost" type="button">Export JSON</button>
-                <button id="exportCsvBtn" class="btn btn-ghost" type="button">Export CSV</button>
-                <button id="importBtn" class="btn btn-ghost" type="button">Import JSON</button>
-                <button id="wipeBtn" class="btn btn-danger" type="button">Delete all data</button>
+                <button id="exportJsonBtn" class="btn" type="button">⬇️ Export JSON</button>
+                <button id="exportCsvBtn" class="btn" type="button">⬇️ Export CSV</button>
+                <button id="importBtn" class="btn" type="button">⬆️ Import JSON</button>
+                <button id="wipeBtn" class="btn btnDanger" type="button">🗑️ Delete all data</button>
               </div>
-              <input id="importFile" type="file" accept="application/json" hidden />
+              <input id="importFile" type="file" accept="application/json" style="display:none;"/>
               <div id="dataStatus" class="status" role="status" aria-live="polite"></div>
             </div>
           </div>
 
-          <div class="box calm">
+          <div class="panel" style="margin-top:14px;">
             <h2>Privacy</h2>
             <div class="muted">
-              PeriPath stores your entries locally in your browser’s IndexedDB storage. No account is required.
-              If you export data, you control where that file goes.
+              PeriPath stores entries locally on your device using IndexedDB. There is no account, and nothing is uploaded anywhere.
             </div>
           </div>
         </div>
@@ -335,82 +1037,1145 @@
     </main>
   </div>
 
-  <!-- DAY EDIT MODAL -->
-  <div id="modalBackdrop" class="modal-backdrop" hidden></div>
+  <!-- MODAL -->
+  <div id="backdrop" class="backdrop"></div>
 
-  <div id="dayModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
-    <div class="modal-head">
+  <div id="dayModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modalHead">
       <div>
-        <div id="modalTitle" class="modal-title">Edit Day</div>
+        <div id="modalTitle" class="modalTitle">Edit Day</div>
         <div id="modalSub" class="muted small">—</div>
       </div>
-      <button id="modalClose" class="btn btn-ghost" type="button">Close</button>
+      <button id="modalClose" class="closeX" type="button">Close</button>
     </div>
 
-    <div class="modal-body">
-      <div class="row between wrap">
-        <div class="score compact">
-          <div class="score-k">Symptom Load</div>
-          <div class="score-v"><span id="modalScore">0</span><span class="muted">/30</span></div>
+    <div class="modalBody">
+      <div class="row between wrap gap">
+        <div class="scorePill" style="min-width: 170px;">
+          <div class="scoreK">Day score</div>
+          <div class="scoreV"><span id="modalScore">0</span> <span class="scoreMax muted">/ <span id="modalScoreMax">0</span></span></div>
         </div>
 
         <label class="toggle">
-          <input id="modalPeriod" type="checkbox" />
+          <input id="modalPeriod" type="checkbox"/>
           <span>Period today</span>
         </label>
       </div>
 
-      <div class="micro muted">
-        Gentle check: you’re not trying to be perfect—just consistent.
+      <div class="muted small" style="margin-top:10px;">
+        Quick edit. Tap levels. Save.
       </div>
 
-      <!-- JS injects grouped symptom cards here -->
-      <div id="modalSymptomGroups" class="groups"></div>
+      <div id="modalSymptomGroups" class="groups" style="margin-top:12px;"></div>
 
-      <div class="field">
+      <div class="field" style="margin-top:12px;">
         <label class="label" for="modalNotes">Notes</label>
         <textarea id="modalNotes" rows="3" placeholder="Notes for this day..."></textarea>
       </div>
 
-      <div class="row gap wrap">
-        <button id="modalSave" class="btn btn-primary" type="button">Save</button>
-        <button id="modalDelete" class="btn btn-danger" type="button">Delete entry</button>
+      <div class="row gap wrap" style="margin-top:12px;">
+        <button id="modalSave" class="btn btnPrimary" type="button">💾 Save</button>
+        <button id="modalDelete" class="btn btnDanger" type="button">Delete</button>
       </div>
 
       <div id="modalStatus" class="status" role="status" aria-live="polite"></div>
     </div>
   </div>
 
-  <!-- INSTALL HELP MODAL -->
-  <div id="installModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="installTitle" hidden>
-    <div class="modal-head">
+  <!-- Help modal -->
+  <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modalHead">
       <div>
-        <div id="installTitle" class="modal-title">Add PeriPath to Home Screen</div>
-        <div class="muted small">For quick access like an app.</div>
+        <div id="helpTitle" class="modalTitle">Add to Home Screen</div>
+        <div class="muted small">For quick “app-like” access.</div>
       </div>
-      <button id="installClose" class="btn btn-ghost" type="button">Close</button>
+      <button id="helpClose" class="closeX" type="button">Close</button>
     </div>
-
-    <div class="modal-body">
+    <div class="modalBody">
       <div class="box">
         <h3>iPhone (Safari)</h3>
         <ol class="muted list">
-          <li>Tap the Share icon</li>
+          <li>Tap Share</li>
           <li>Tap “Add to Home Screen”</li>
           <li>Tap “Add”</li>
         </ol>
       </div>
-
-      <div class="box">
+      <div class="box" style="margin-top:12px;">
         <h3>Android (Chrome)</h3>
         <ol class="muted list">
-          <li>Tap the menu (⋮)</li>
+          <li>Tap menu (⋮)</li>
           <li>Tap “Install app” or “Add to Home screen”</li>
         </ol>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    (() => {
+      // ------------------------------------------------------------
+      // Clinically grounded symptom list (perimenopause/menopause)
+      // - Cycle irregularity / period changes: common early sign  [oai_citation:3‡nhs.uk](https://www.nhs.uk/conditions/menopause/symptoms/?utm_source=chatgpt.com)
+      // - Vasomotor (hot flashes/night sweats)  [oai_citation:4‡The Menopause Society](https://menopause.org/patient-education/menopause-topics/symptoms?utm_source=chatgpt.com)
+      // - Sleep problems  [oai_citation:5‡National Institute on Aging](https://www.nia.nih.gov/health/menopause/sleep-problems-and-menopause-what-can-i-do?utm_source=chatgpt.com)
+      // - Mood changes / irritability / anxiety  [oai_citation:6‡The Menopause Society](https://menopause.org/patient-education/menopause-topics/symptoms?utm_source=chatgpt.com)
+      // - Cognitive issues / brain fog / concentration  [oai_citation:7‡nhs.uk](https://www.nhs.uk/conditions/menopause/symptoms/?utm_source=chatgpt.com)
+      // - Joint/muscle discomfort  [oai_citation:8‡National Institute on Aging](https://www.nia.nih.gov/health/menopause/what-menopause?utm_source=chatgpt.com)
+      // - Vaginal dryness / GSM and urinary symptoms  [oai_citation:9‡ACOG](https://www.acog.org/womens-health/faqs/the-menopause-years?utm_source=chatgpt.com)
+      // - Libido changes  [oai_citation:10‡nhs.uk](https://www.nhs.uk/conditions/menopause/symptoms/?utm_source=chatgpt.com)
+      // ------------------------------------------------------------
+      const GROUPS = [
+        {
+          id: "cycle",
+          title: "Cycle",
+          sub: "Perimenopause often starts with changes to your normal period pattern.  [oai_citation:11‡nhs.uk](https://www.nhs.uk/conditions/menopause/symptoms/?utm_source=chatgpt.com)",
+          items: [
+            { key: "cycleIrregularity", label: "Irregular periods / spotting", tip: "Changes in timing/flow" }
+          ]
+        },
+        {
+          id: "vasomotor",
+          title: "Vasomotor",
+          sub: "Hot flashes and night sweats are common menopause-transition symptoms.  [oai_citation:12‡The Menopause Society](https://menopause.org/patient-education/menopause-topics/symptoms?utm_source=chatgpt.com)",
+          items: [
+            { key: "hotFlashes", label: "Hot flashes", tip: "Sudden heat, flushing" },
+            { key: "nightSweats", label: "Night sweats", tip: "Sweating disrupts sleep" }
+          ]
+        },
+        {
+          id: "sleepEnergy",
+          title: "Sleep & Energy",
+          sub: "Sleep trouble and fatigue are frequently reported.  [oai_citation:13‡National Institute on Aging](https://www.nia.nih.gov/health/menopause/sleep-problems-and-menopause-what-can-i-do?utm_source=chatgpt.com)",
+          items: [
+            { key: "sleep", label: "Sleep quality", tip: "Falling/staying asleep" },
+            { key: "fatigue", label: "Fatigue", tip: "Low energy" }
+          ]
+        },
+        {
+          id: "mindMood",
+          title: "Mind & Mood",
+          sub: "Mood changes and “brain fog” can occur during the transition.  [oai_citation:14‡ACOG](https://www.acog.org/womens-health/experts-and-stories/the-latest/mood-changes-during-perimenopause-are-real-heres-what-to-know?utm_source=chatgpt.com)",
+          items: [
+            { key: "mood", label: "Mood / irritability", tip: "Short fuse, low mood" },
+            { key: "anxiety", label: "Anxiety", tip: "Worry/tension" },
+            { key: "brainFog", label: "Brain fog", tip: "Focus/memory" }
+          ]
+        },
+        {
+          id: "body",
+          title: "Body",
+          sub: "Joint and muscle discomfort can be part of the transition for some people.  [oai_citation:15‡National Institute on Aging](https://www.nia.nih.gov/health/menopause/what-menopause?utm_source=chatgpt.com)",
+          items: [
+            { key: "jointAches", label: "Joint / muscle aches", tip: "Stiffness/soreness" }
+          ]
+        },
+        {
+          id: "intimacyUro",
+          title: "Intimacy & Bladder",
+          sub: "Vaginal dryness and urinary changes can happen as estrogen levels change (GSM).  [oai_citation:16‡ACOG](https://www.acog.org/womens-health/faqs/the-menopause-years?utm_source=chatgpt.com)",
+          items: [
+            { key: "dryness", label: "Vaginal dryness / discomfort", tip: "Dryness/pain" },
+            { key: "urinary", label: "Urinary urgency / leaks", tip: "Bladder changes" },
+            { key: "libido", label: "Libido changes", tip: "Interest changes" }
+          ]
+        }
+      ];
+
+      const SYMPTOMS = GROUPS.flatMap(g => g.items);
+
+      const LEVELS = [
+        { v: 0, label: "None" },
+        { v: 1, label: "Mild" },
+        { v: 2, label: "Moderate" },
+        { v: 3, label: "Strong" }
+      ];
+
+      const MAX_SCORE = SYMPTOMS.length * 3;
+
+      // -------------------------
+      // IndexedDB
+      // -------------------------
+      const DB_NAME = "peripath_singlefile_db";
+      const DB_VERSION = 1;
+      const STORE = "daily_logs"; // keyPath: date (YYYY-MM-DD)
+
+      function openDB(){
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE)) {
+              db.createObjectStore(STORE, { keyPath: "date" });
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function withStore(mode, fn){
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, mode);
+          const store = tx.objectStore(STORE);
+          const out = fn(store);
+          tx.oncomplete = () => resolve(out);
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      function putLog(entry){
+        return withStore("readwrite", s => s.put(entry));
+      }
+      function getLog(date){
+        return withStore("readonly", s => new Promise((resolve, reject) => {
+          const req = s.get(date);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        }));
+      }
+      function deleteLog(date){
+        return withStore("readwrite", s => s.delete(date));
+      }
+      function getAllLogs(){
+        return withStore("readonly", s => new Promise((resolve, reject) => {
+          const req = s.getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => reject(req.error);
+        }));
+      }
+      function clearAll(){
+        return withStore("readwrite", s => s.clear());
+      }
+
+      // -------------------------
+      // Utility
+      // -------------------------
+      const $ = (id) => document.getElementById(id);
+      const qsa = (sel) => Array.from(document.querySelectorAll(sel));
+
+      function toISO(d){
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,"0");
+        const day = String(d.getDate()).padStart(2,"0");
+        return `${y}-${m}-${day}`;
+      }
+      function parseISO(iso){
+        const [y,m,d] = iso.split("-").map(Number);
+        return new Date(y, m-1, d);
+      }
+      function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+      function sumScore(symObj){
+        return SYMPTOMS.reduce((acc, s) => acc + (Number(symObj?.[s.key]) || 0), 0);
+      }
+
+      function escapeHTML(str){
+        return String(str)
+          .replaceAll("&","&amp;")
+          .replaceAll("<","&lt;")
+          .replaceAll(">","&gt;")
+          .replaceAll('"',"&quot;")
+          .replaceAll("'","&#039;");
+      }
+
+      function downloadBlob(blob, filename){
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      // -------------------------
+      // App state
+      // -------------------------
+      const checkinState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+      const modalState = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+      let logsCache = [];
+      let calCursor = new Date();
+      let calMode = "agenda"; // agenda | month
+      let modalDate = null;
+
+      // -------------------------
+      // DOM refs
+      // -------------------------
+      const navBtns = qsa(".navBtn");
+      const views = {
+        checkin: $("view-checkin"),
+        calendar: $("view-calendar"),
+        insights: $("view-insights"),
+        report: $("view-report"),
+        settings: $("view-settings")
+      };
+
+      const offlineBadge = $("offlineBadge");
+      const todayBtn = $("todayBtn");
+      const helpBtn = $("helpBtn");
+
+      const logDate = $("logDate");
+      const periodToday = $("periodToday");
+      const notes = $("notes");
+      const scoreValue = $("scoreValue");
+      const scoreMax = $("scoreMax");
+      const symptomGroups = $("symptomGroups");
+      const saveBtn = $("saveBtn");
+      const resetBtn = $("resetBtn");
+      const saveStatus = $("saveStatus");
+
+      const calViewAgenda = $("calViewAgenda");
+      const calViewMonth = $("calViewMonth");
+      const prevMonth = $("prevMonth");
+      const nextMonth = $("nextMonth");
+      const monthLabel = $("monthLabel");
+      const shadeMode = $("shadeMode");
+      const agendaWrap = $("agendaWrap");
+      const agendaList = $("agendaList");
+      const monthWrap = $("monthWrap");
+      const calendarGrid = $("calendarGrid");
+
+      const avg7 = $("avg7");
+      const avgPrev7 = $("avgPrev7");
+      const trend7 = $("trend7");
+      const trendChart = $("trendChart");
+      const topSymptoms = $("topSymptoms");
+
+      const reportRange = $("reportRange");
+      const printBtn = $("printBtn");
+      const reportMeta = $("reportMeta");
+      const rEntries = $("rEntries");
+      const rAvg = $("rAvg");
+      const rMax = $("rMax");
+      const rPeriodDays = $("rPeriodDays");
+      const rTopSymptoms = $("rTopSymptoms");
+      const rCycle = $("rCycle");
+      const rNotes = $("rNotes");
+
+      const exportJsonBtn = $("exportJsonBtn");
+      const exportCsvBtn = $("exportCsvBtn");
+      const importBtn = $("importBtn");
+      const wipeBtn = $("wipeBtn");
+      const importFile = $("importFile");
+      const dataStatus = $("dataStatus");
+
+      const backdrop = $("backdrop");
+      const dayModal = $("dayModal");
+      const modalSub = $("modalSub");
+      const modalClose = $("modalClose");
+      const modalScore = $("modalScore");
+      const modalScoreMax = $("modalScoreMax");
+      const modalPeriod = $("modalPeriod");
+      const modalSymptomGroups = $("modalSymptomGroups");
+      const modalNotes = $("modalNotes");
+      const modalSave = $("modalSave");
+      const modalDelete = $("modalDelete");
+      const modalStatus = $("modalStatus");
+
+      const helpModal = $("helpModal");
+      const helpClose = $("helpClose");
+
+      // -------------------------
+      // Navigation
+      // -------------------------
+      function setView(key){
+        navBtns.forEach(b => b.classList.toggle("active", b.dataset.view === key));
+        Object.entries(views).forEach(([k, el]) => el.classList.toggle("active", k === key));
+
+        if (key === "calendar") refreshCalendar();
+        if (key === "insights") refreshInsights();
+        if (key === "report") refreshReport();
+      }
+      navBtns.forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+
+      // -------------------------
+      // Build symptom UI (tap chips)
+      // -------------------------
+      function chipHTML(prefix, symptomKey, level){
+        const id = `${prefix}-${symptomKey}-${level.v}`;
+        return `
+          <button class="chip" type="button" data-chip="${id}" data-prefix="${prefix}" data-sym="${symptomKey}" data-val="${level.v}">
+            <span class="spark" aria-hidden="true"></span>
+            ${level.label}
+          </button>
+        `;
+      }
+
+      function symptomCardHTML(prefix, s){
+        const badgeId = `${prefix}-badge-${s.key}`;
+        const rowId = `${prefix}-row-${s.key}`;
+        return `
+          <div class="symCard">
+            <div class="symTop">
+              <div>
+                <div class="symName">${s.label}</div>
+                <div class="muted tiny">${escapeHTML(s.tip || "")}</div>
+              </div>
+              <div class="symBadge" id="${badgeId}">None</div>
+            </div>
+            <div class="chipRow" id="${rowId}">
+              ${LEVELS.map(l => chipHTML(prefix, s.key, l)).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function groupHTML(prefix, g){
+        return `
+          <div class="group">
+            <div class="groupHead">
+              <div>
+                <div class="groupTitle">${g.title}</div>
+                <div class="groupSub">${g.sub}</div>
+              </div>
+            </div>
+            <div class="symGrid">
+              ${g.items.map(s => symptomCardHTML(prefix, s)).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function buildGroups(container, prefix){
+        container.innerHTML = GROUPS.map(g => groupHTML(prefix, g)).join("");
+      }
+
+      function setChipSelection(prefix, symKey, v){
+        const row = document.getElementById(`${prefix}-row-${symKey}`);
+        if (!row) return;
+        row.querySelectorAll(".chip").forEach(btn => {
+          const btnVal = Number(btn.dataset.val);
+          btn.classList.toggle("active", btnVal === v);
+        });
+        const badge = document.getElementById(`${prefix}-badge-${symKey}`);
+        if (badge) badge.textContent = LEVELS.find(x => x.v === v)?.label || "—";
+      }
+
+      // Event delegation for chips
+      function wireChips(container, prefix, stateObj, scoreUpdater){
+        container.addEventListener("click", (e) => {
+          const t = e.target.closest(".chip");
+          if (!t) return;
+          const symKey = t.dataset.sym;
+          const v = clamp(Number(t.dataset.val), 0, 3);
+          stateObj[symKey] = v;
+          setChipSelection(prefix, symKey, v);
+          scoreUpdater();
+        });
+      }
+
+      // -------------------------
+      // Check-in
+      // -------------------------
+      function updateCheckinScore(){
+        scoreValue.textContent = String(sumScore(checkinState));
+      }
+
+      function resetCheckinUI(){
+        SYMPTOMS.forEach(s => { checkinState[s.key] = 0; setChipSelection("c", s.key, 0); });
+        periodToday.checked = false;
+        notes.value = "";
+        updateCheckinScore();
+        saveStatus.textContent = "Reset (not saved).";
+      }
+
+      async function loadIntoCheckin(dateISO){
+        const entry = await getLog(dateISO);
+        if (!entry){
+          resetCheckinUI();
+          saveStatus.textContent = `No saved entry for ${dateISO}.`;
+          return;
+        }
+        SYMPTOMS.forEach(s => {
+          const v = clamp(Number(entry.symptoms?.[s.key] ?? 0), 0, 3);
+          checkinState[s.key] = v;
+          setChipSelection("c", s.key, v);
+        });
+        periodToday.checked = !!entry.period;
+        notes.value = entry.notes || "";
+        updateCheckinScore();
+        saveStatus.textContent = `Loaded saved entry for ${dateISO}.`;
+      }
+
+      async function saveCheckin(){
+        const dateISO = logDate.value;
+        if (!dateISO) return;
+
+        const symptoms = {};
+        SYMPTOMS.forEach(s => symptoms[s.key] = clamp(Number(checkinState[s.key] || 0), 0, 3));
+        const score = sumScore(symptoms);
+
+        const entry = {
+          date: dateISO,
+          symptoms,
+          score,
+          period: !!periodToday.checked,
+          notes: (notes.value || "").trim(),
+          updatedAt: new Date().toISOString()
+        };
+
+        await putLog(entry);
+        await refreshLogsCache();
+        saveStatus.textContent = `Saved entry for ${dateISO}.`;
+        burst(saveBtn);
+      }
+
+      // tiny “fun” sparkle burst (no libraries)
+      function burst(anchor){
+        const rect = anchor.getBoundingClientRect();
+        const n = 14;
+        for (let i=0;i<n;i++){
+          const p = document.createElement("div");
+          p.style.position="fixed";
+          p.style.left = (rect.left + rect.width/2) + "px";
+          p.style.top = (rect.top + rect.height/2) + "px";
+          p.style.width="8px"; p.style.height="8px";
+          p.style.borderRadius="999px";
+          p.style.background = `linear-gradient(135deg, rgba(255,47,135,.95), rgba(25,211,255,.95))`;
+          p.style.boxShadow="0 0 0 6px rgba(255,47,135,.10)";
+          p.style.zIndex="120";
+          const angle = Math.random()*Math.PI*2;
+          const dist = 40 + Math.random()*50;
+          const dx = Math.cos(angle)*dist;
+          const dy = Math.sin(angle)*dist;
+          p.animate([
+            { transform:"translate(0,0) scale(1)", opacity:1 },
+            { transform:`translate(${dx}px, ${dy}px) scale(.6)`, opacity:0 }
+          ], { duration: 520 + Math.random()*200, easing:"cubic-bezier(.2,.8,.2,1)" });
+          document.body.appendChild(p);
+          setTimeout(() => p.remove(), 800);
+        }
+      }
+
+      // -------------------------
+      // Calendar
+      // -------------------------
+      function populateShadeMode(){
+        shadeMode.innerHTML = `
+          <option value="score">Score</option>
+          ${SYMPTOMS.map(s => `<option value="${s.key}">${s.label}</option>`).join("")}
+        `;
+      }
+
+      function shadeStyle(entry){
+        const mode = shadeMode.value || "score";
+        let v;
+        if (mode === "score") v = Number(entry.score ?? sumScore(entry.symptoms)) || 0;
+        else v = Number(entry.symptoms?.[mode] || 0);
+
+        // Fun color mapping
+        // 0 => cool, 1 => aqua, 2 => violet, 3/high => pink/amber blend
+        let bg = "rgba(0,0,0,.14)";
+        if (mode === "score") {
+          if (v <= 4) bg = "linear-gradient(135deg, rgba(25,211,255,.14), rgba(0,0,0,.14))";
+          else if (v <= 10) bg = "linear-gradient(135deg, rgba(124,255,107,.12), rgba(0,0,0,.14))";
+          else if (v <= 18) bg = "linear-gradient(135deg, rgba(124,58,237,.16), rgba(0,0,0,.14))";
+          else bg = "linear-gradient(135deg, rgba(255,47,135,.20), rgba(255,191,47,.12))";
+        } else {
+          if (v === 0) bg = "linear-gradient(135deg, rgba(25,211,255,.10), rgba(0,0,0,.14))";
+          if (v === 1) bg = "linear-gradient(135deg, rgba(124,255,107,.10), rgba(0,0,0,.14))";
+          if (v === 2) bg = "linear-gradient(135deg, rgba(124,58,237,.14), rgba(0,0,0,.14))";
+          if (v === 3) bg = "linear-gradient(135deg, rgba(255,47,135,.18), rgba(255,191,47,.12))";
+        }
+        return bg;
+      }
+
+      async function refreshCalendar(){
+        await refreshLogsCache();
+        monthLabel.textContent = calCursor.toLocaleString(undefined, { month:"long", year:"numeric" });
+
+        // Agenda: show month days with quick summary
+        renderAgenda();
+
+        // Month grid
+        renderMonth();
+        applyCalendarMode();
+      }
+
+      function applyCalendarMode(){
+        const isAgenda = (calMode === "agenda");
+        agendaWrap.style.display = isAgenda ? "block" : "none";
+        monthWrap.style.display = isAgenda ? "none" : "block";
+        calViewAgenda.classList.toggle("active", isAgenda);
+        calViewMonth.classList.toggle("active", !isAgenda);
+      }
+
+      function renderAgenda(){
+        const map = new Map(logsCache.map(l => [l.date, l]));
+        const monthStart = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+        const monthEnd = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0);
+
+        const items = [];
+        for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate()+1)){
+          const iso = toISO(d);
+          const entry = map.get(iso) || null;
+          if (!entry){
+            items.push({ iso, kind:"empty" });
+          } else {
+            items.push({ iso, kind:"entry", entry });
+          }
+        }
+
+        agendaList.innerHTML = items.map(x => {
+          const nice = parseISO(x.iso).toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" });
+          if (x.kind === "empty"){
+            return `
+              <div class="agendaCard" data-open="${x.iso}" style="opacity:.78;">
+                <div class="agendaLeft">
+                  <div class="agendaDate">${nice}</div>
+                  <div class="agendaMeta">No entry yet — tap to add.</div>
+                </div>
+                <div class="pill aqua">＋ Add</div>
+              </div>
+            `;
+          }
+          const score = Number(x.entry.score ?? sumScore(x.entry.symptoms)) || 0;
+          const top = topTwoSymptoms(x.entry);
+          const p = x.entry.period ? `<span class="pill pink">Period</span>` : "";
+          return `
+            <div class="agendaCard" data-open="${x.iso}" style="background:${shadeStyle(x.entry)};">
+              <div class="agendaLeft">
+                <div class="agendaDate">${nice}</div>
+                <div class="agendaMeta">Score <strong>${score}/${MAX_SCORE}</strong>${top ? ` · ${escapeHTML(top)}` : ""}</div>
+              </div>
+              <div class="row gap wrap">
+                ${p}
+                <span class="pill amber">Edit</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        agendaList.querySelectorAll("[data-open]").forEach(el => {
+          el.addEventListener("click", () => openDayModal(el.dataset.open));
+        });
+      }
+
+      function renderMonth(){
+        const map = new Map(logsCache.map(l => [l.date, l]));
+        const monthStart = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+        const monthEnd = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0);
+
+        // pad to Sunday start and Saturday end
+        const start = new Date(monthStart);
+        start.setDate(start.getDate() - start.getDay());
+        const end = new Date(monthEnd);
+        end.setDate(end.getDate() + (6 - end.getDay()));
+
+        calendarGrid.innerHTML = "";
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+          const iso = toISO(d);
+          const inMonth = d.getMonth() === monthStart.getMonth();
+          const entry = map.get(iso) || null;
+
+          const cell = document.createElement("div");
+          cell.className = "day";
+          if (!inMonth) cell.classList.add("dim");
+          if (entry) cell.classList.add("hasData");
+          if (entry?.period) cell.classList.add("period");
+          if (entry) cell.style.background = shadeStyle(entry);
+
+          cell.innerHTML = `<div class="dayNum">${d.getDate()}</div><div class="dayDot"></div>`;
+          cell.addEventListener("click", () => openDayModal(iso));
+          calendarGrid.appendChild(cell);
+        }
+      }
+
+      function topTwoSymptoms(entry){
+        const pairs = SYMPTOMS.map(s => ({ label: s.label, v: Number(entry.symptoms?.[s.key] || 0) }))
+          .filter(x => x.v > 0)
+          .sort((a,b) => b.v - a.v);
+
+        if (!pairs.length) return "";
+        const top = pairs.slice(0,2).map(p => `${p.label} (${p.v})`);
+        return top.join(", ");
+      }
+
+      // -------------------------
+      // Insights
+      // -------------------------
+      async function refreshInsights(){
+        await refreshLogsCache();
+        if (!logsCache.length){
+          avg7.textContent = "—";
+          avgPrev7.textContent = "—";
+          trend7.textContent = "—";
+          trendChart.innerHTML = "";
+          topSymptoms.textContent = "No data yet.";
+          return;
+        }
+
+        const now = new Date();
+        const last7Start = new Date(now); last7Start.setDate(now.getDate()-6);
+        const prev7Start = new Date(now); prev7Start.setDate(now.getDate()-13);
+        const prev7End = new Date(now); prev7End.setDate(now.getDate()-7);
+
+        const inRange = (iso, a, b) => {
+          const d = parseISO(iso).getTime();
+          return d >= a.getTime() && d <= b.getTime();
+        };
+
+        const last7 = logsCache.filter(l => inRange(l.date, new Date(last7Start.setHours(0,0,0,0)), new Date(now.setHours(23,59,59,999))));
+        const prev7 = logsCache.filter(l => inRange(l.date, new Date(prev7Start.setHours(0,0,0,0)), new Date(prev7End.setHours(23,59,59,999))));
+
+        const avg = (arr) => arr.length ? (arr.reduce((acc,l)=>acc + (Number(l.score ?? sumScore(l.symptoms))||0),0) / arr.length) : null;
+
+        const a7 = avg(last7);
+        const ap7 = avg(prev7);
+
+        avg7.textContent = (a7 === null) ? "—" : a7.toFixed(1);
+        avgPrev7.textContent = (ap7 === null) ? "—" : ap7.toFixed(1);
+
+        if (a7 === null || ap7 === null){
+          trend7.textContent = "—";
+        } else {
+          const delta = a7 - ap7;
+          const arrow = delta > 0.2 ? "↑" : delta < -0.2 ? "↓" : "→";
+          trend7.textContent = `${arrow} ${delta.toFixed(1)}`;
+        }
+
+        // 30 day trend chart
+        const start = new Date();
+        start.setDate(start.getDate()-29);
+        start.setHours(0,0,0,0);
+
+        const map = new Map(logsCache.map(l => [l.date, Number(l.score ?? sumScore(l.symptoms))||0]));
+        const series = [];
+        for (let i=0;i<30;i++){
+          const d = new Date(start);
+          d.setDate(start.getDate()+i);
+          const iso = toISO(d);
+          series.push({ iso, val: map.has(iso) ? map.get(iso) : null });
+        }
+        renderSparkChart(series);
+
+        // Top symptoms last 30 days
+        const sums = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+        let count = 0;
+        for (const l of logsCache){
+          const d = parseISO(l.date);
+          if (d < start) continue;
+          count++;
+          SYMPTOMS.forEach(s => sums[s.key] += Number(l.symptoms?.[s.key] || 0));
+        }
+        if (!count){
+          topSymptoms.textContent = "No data in the last 30 days.";
+          return;
+        }
+        const ranked = SYMPTOMS.map(s => ({ label: s.label, avg: sums[s.key] / count }))
+          .sort((a,b)=>b.avg-a.avg)
+          .slice(0,8)
+          .filter(x => x.avg > 0);
+
+        topSymptoms.innerHTML = ranked.length ? ranked.map(x => `
+          <div class="miniCard">
+            <div class="miniK">${x.label}</div>
+            <div class="miniV">${x.avg.toFixed(2)}</div>
+          </div>
+        `).join("") : `<div class="muted">All logged values are zero in this period.</div>`;
+      }
+
+      function renderSparkChart(series){
+        const w = 860, h = 170, pad = 18;
+        const min = 0, max = MAX_SCORE;
+
+        const xs = (i) => pad + (i * (w - pad*2) / (series.length - 1));
+        const ys = (v) => {
+          const t = (v - min) / (max - min);
+          return (h - pad) - t * (h - pad*2);
+        };
+
+        let path = "";
+        let started = false;
+        series.forEach((p,i) => {
+          if (p.val === null){ started = false; return; }
+          const x = xs(i), y = ys(p.val);
+          if (!started){ path += `M ${x.toFixed(2)} ${y.toFixed(2)} `; started = true; }
+          else { path += `L ${x.toFixed(2)} ${y.toFixed(2)} `; }
+        });
+
+        const dots = series.map((p,i) => {
+          if (p.val === null) return "";
+          const x = xs(i), y = ys(p.val);
+          return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.8" fill="rgba(25,211,255,.95)"/>`;
+        }).join("");
+
+        const grid = [0, Math.round(MAX_SCORE/3), Math.round(2*MAX_SCORE/3), MAX_SCORE].map(v => {
+          const y = ys(v);
+          return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="rgba(251,251,255,.12)" stroke-width="1"/>`;
+        }).join("");
+
+        trendChart.innerHTML = `
+          <svg viewBox="0 0 ${w} ${h}" width="100%" height="170" aria-hidden="true">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="rgba(255,47,135,.92)"/>
+                <stop offset="55%" stop-color="rgba(124,58,237,.82)"/>
+                <stop offset="100%" stop-color="rgba(25,211,255,.82)"/>
+              </linearGradient>
+            </defs>
+            ${grid}
+            <path d="${path}" fill="none" stroke="url(#g)" stroke-width="2.6" stroke-linecap="round"/>
+            ${dots}
+          </svg>
+        `;
+      }
+
+      // -------------------------
+      // Report
+      // -------------------------
+      async function refreshReport(){
+        await refreshLogsCache();
+        const range = Number(reportRange.value || 30);
+        const now = new Date();
+        const start = new Date(now);
+        start.setDate(start.getDate() - (range-1));
+        start.setHours(0,0,0,0);
+
+        const filtered = logsCache.filter(l => parseISO(l.date) >= start);
+
+        reportMeta.textContent = `${toISO(start)} to ${toISO(new Date())} (last ${range} days)`;
+
+        if (!filtered.length){
+          rEntries.textContent = "0";
+          rAvg.textContent = "—";
+          rMax.textContent = "—";
+          rPeriodDays.textContent = "—";
+          rTopSymptoms.innerHTML = "—";
+          rCycle.innerHTML = "—";
+          rNotes.innerHTML = "—";
+          return;
+        }
+
+        const scores = filtered.map(l => Number(l.score ?? sumScore(l.symptoms))||0);
+        const entries = filtered.length;
+        const avgScore = scores.reduce((a,b)=>a+b,0)/entries;
+        const maxScore = Math.max(...scores);
+        const periodDays = filtered.filter(l => !!l.period).length;
+
+        rEntries.textContent = String(entries);
+        rAvg.textContent = avgScore.toFixed(1);
+        rMax.textContent = `${maxScore} / ${MAX_SCORE}`;
+        rPeriodDays.textContent = String(periodDays);
+
+        // Top symptoms
+        const sums = Object.fromEntries(SYMPTOMS.map(s => [s.key, 0]));
+        filtered.forEach(l => SYMPTOMS.forEach(s => sums[s.key] += Number(l.symptoms?.[s.key] || 0)));
+        const avgs = SYMPTOMS.map(s => ({ label:s.label, avg: sums[s.key]/entries }))
+          .sort((a,b)=>b.avg-a.avg)
+          .slice(0,10)
+          .filter(x => x.avg > 0);
+
+        rTopSymptoms.innerHTML = avgs.length ? avgs.map(x => `
+          <div class="miniCard"><div class="miniK">${x.label}</div><div class="miniV">${x.avg.toFixed(2)}</div></div>
+        `).join("") : `<div class="muted">All symptom values are zero in this range.</div>`;
+
+        // Cycle intervals (period starts)
+        const sorted = filtered.slice().sort((a,b)=>a.date.localeCompare(b.date));
+        const periodStarts = [];
+        let prevWasPeriod = false;
+        sorted.forEach(l => {
+          const isP = !!l.period;
+          if (isP && !prevWasPeriod) periodStarts.push(l.date);
+          prevWasPeriod = isP;
+        });
+
+        if (periodStarts.length < 2){
+          rCycle.innerHTML = `<div class="muted">Not enough period start data in this range.</div>`;
+        } else {
+          const intervals = [];
+          for (let i=1;i<periodStarts.length;i++){
+            intervals.push(Math.round((parseISO(periodStarts[i]).getTime() - parseISO(periodStarts[i-1]).getTime())/(1000*60*60*24)));
+          }
+          const avgInt = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+          rCycle.innerHTML = `
+            <div class="miniCard"><div class="miniK">Period starts logged</div><div class="miniV">${periodStarts.length}</div></div>
+            <div class="miniCard"><div class="miniK">Intervals (days)</div><div class="miniV">${intervals.join(", ")}</div></div>
+            <div class="miniCard"><div class="miniK">Average interval</div><div class="miniV">${avgInt.toFixed(1)} days</div></div>
+          `;
+        }
+
+        // Notes
+        const noted = sorted.filter(l => (l.notes||"").trim().length>0).slice(-10).reverse();
+        rNotes.innerHTML = noted.length ? noted.map(l => `
+          <div class="miniCard">
+            <div class="miniK">${l.date}</div>
+            <div class="miniV" style="font-size:14px; font-weight:800; line-height:1.35">${escapeHTML(l.notes)}</div>
+          </div>
+        `).join("") : `<div class="muted">No notes in this range.</div>`;
+      }
+
+      // -------------------------
+      // Modal editor
+      // -------------------------
+      function updateModalScore(){
+        modalScore.textContent = String(sumScore(modalState));
+      }
+
+      function showModal(which){
+        backdrop.style.display = which ? "block" : "none";
+        dayModal.style.display = (which === "day") ? "block" : "none";
+        helpModal.style.display = (which === "help") ? "block" : "none";
+      }
+
+      async function openDayModal(dateISO){
+        modalDate = dateISO;
+        modalSub.textContent = dateISO;
+
+        const entry = await getLog(dateISO);
+
+        // populate state
+        SYMPTOMS.forEach(s => {
+          const v = clamp(Number(entry?.symptoms?.[s.key] ?? 0), 0, 3);
+          modalState[s.key] = v;
+          setChipSelection("m", s.key, v);
+        });
+
+        modalPeriod.checked = !!entry?.period;
+        modalNotes.value = entry?.notes || "";
+        updateModalScore();
+
+        modalStatus.textContent = entry ? "Loaded entry." : "No entry yet — tap levels and save.";
+        showModal("day");
+      }
+
+      async function saveModal(){
+        if (!modalDate) return;
+
+        const symptoms = {};
+        SYMPTOMS.forEach(s => symptoms[s.key] = clamp(Number(modalState[s.key]||0), 0, 3));
+        const score = sumScore(symptoms);
+
+        const entry = {
+          date: modalDate,
+          symptoms,
+          score,
+          period: !!modalPeriod.checked,
+          notes: (modalNotes.value||"").trim(),
+          updatedAt: new Date().toISOString()
+        };
+
+        await putLog(entry);
+        await refreshLogsCache();
+        modalStatus.textContent = "Saved.";
+        burst(modalSave);
+
+        if (logDate.value === modalDate) await loadIntoCheckin(modalDate);
+        refreshCalendar();
+        refreshInsights();
+        refreshReport();
+      }
+
+      async function deleteModal(){
+        if (!modalDate) return;
+        const ok = confirm(`Delete entry for ${modalDate}?`);
+        if (!ok) return;
+
+        await deleteLog(modalDate);
+        await refreshLogsCache();
+        modalStatus.textContent = "Deleted.";
+
+        if (logDate.value === modalDate) await loadIntoCheckin(modalDate);
+        refreshCalendar();
+        refreshInsights();
+        refreshReport();
+      }
+
+      // -------------------------
+      // Export / Import
+      // -------------------------
+      exportJsonBtn.addEventListener("click", async () => {
+        await refreshLogsCache();
+        const payload = { app:"PeriPath", version:1, exportedAt: new Date().toISOString(), logs: logsCache };
+        downloadBlob(new Blob([JSON.stringify(payload,null,2)], {type:"application/json"}), `peripath-export-${toISO(new Date())}.json`);
+        dataStatus.textContent = "Exported JSON.";
+      });
+
+      exportCsvBtn.addEventListener("click", async () => {
+        await refreshLogsCache();
+        const headers = ["date","score","period","notes", ...SYMPTOMS.map(s=>s.key)];
+        const rows = logsCache.map(l => {
+          const score = String(Number(l.score ?? sumScore(l.symptoms))||0);
+          const period = l.period ? "1" : "0";
+          const notes = `"${String(l.notes||"").replaceAll('"','""')}"`;
+          const sym = SYMPTOMS.map(s => String(Number(l.symptoms?.[s.key]||0)));
+          return [l.date, score, period, notes, ...sym].join(",");
+        });
+        const csv = [headers.join(","), ...rows].join("\n");
+        downloadBlob(new Blob([csv], {type:"text/csv"}), `peripath-export-${toISO(new Date())}.csv`);
+        dataStatus.textContent = "Exported CSV.";
+      });
+
+      importBtn.addEventListener("click", () => {
+        importFile.value = "";
+        importFile.click();
+      });
+
+      importFile.addEventListener("change", async () => {
+        const file = importFile.files?.[0];
+        if (!file) return;
+
+        try{
+          const txt = await file.text();
+          const parsed = JSON.parse(txt);
+          const logs = Array.isArray(parsed?.logs) ? parsed.logs : null;
+          if (!logs) throw new Error("Invalid file: missing logs[]");
+
+          let imported = 0;
+          for (const l of logs){
+            if (!l?.date || !/^\d{4}-\d{2}-\d{2}$/.test(l.date)) continue;
+            const symptoms = {};
+            SYMPTOMS.forEach(s => symptoms[s.key] = clamp(Number(l.symptoms?.[s.key]||0),0,3));
+            await putLog({
+              date: l.date,
+              symptoms,
+              score: sumScore(symptoms),
+              period: !!l.period,
+              notes: (l.notes||"").toString(),
+              updatedAt: l.updatedAt || new Date().toISOString()
+            });
+            imported++;
+          }
+
+          await refreshLogsCache();
+          dataStatus.textContent = `Imported ${imported} entries.`;
+          refreshCalendar(); refreshInsights(); refreshReport();
+          await loadIntoCheckin(logDate.value);
+
+        } catch(e){
+          dataStatus.textContent = `Import failed: ${e.message}`;
+        }
+      });
+
+      wipeBtn.addEventListener("click", async () => {
+        const ok = confirm("Delete all PeriPath data on this device? This cannot be undone.");
+        if (!ok) return;
+        await clearAll();
+        await refreshLogsCache();
+        dataStatus.textContent = "All data deleted.";
+        resetCheckinUI();
+        refreshCalendar(); refreshInsights(); refreshReport();
+      });
+
+      // -------------------------
+      // Logs cache
+      // -------------------------
+      async function refreshLogsCache(){
+        logsCache = await getAllLogs();
+        logsCache.sort((a,b) => a.date.localeCompare(b.date));
+      }
+
+      // -------------------------
+      // Offline badge
+      // -------------------------
+      function updateOfflineBadge(){
+        offlineBadge.style.display = navigator.onLine ? "none" : "inline-flex";
+      }
+      window.addEventListener("online", updateOfflineBadge);
+      window.addEventListener("offline", updateOfflineBadge);
+
+      // -------------------------
+      // Wire up controls
+      // -------------------------
+      logDate.addEventListener("change", async () => {
+        if (!logDate.value) return;
+        await loadIntoCheckin(logDate.value);
+      });
+
+      saveBtn.addEventListener("click", async () => {
+        try{
+          saveBtn.disabled = true;
+          await saveCheckin();
+          refreshCalendar(); refreshInsights(); refreshReport();
+        } catch(e){
+          saveStatus.textContent = `Save failed: ${e.message}`;
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+
+      resetBtn.addEventListener("click", resetCheckinUI);
+
+      todayBtn.addEventListener("click", async () => {
+        const iso = toISO(new Date());
+        logDate.value = iso;
+        await loadIntoCheckin(iso);
+        calCursor = new Date();
+        await refreshCalendar();
+        setView("checkin");
+      });
+
+      helpBtn.addEventListener("click", () => showModal("help"));
+      helpClose.addEventListener("click", () => showModal(null));
+
+      calViewAgenda.addEventListener("click", () => { calMode = "agenda"; applyCalendarMode(); });
+      calViewMonth.addEventListener("click", () => { calMode = "month"; applyCalendarMode(); });
+
+      prevMonth.addEventListener("click", () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()-1, 1); refreshCalendar(); });
+      nextMonth.addEventListener("click", () => { calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()+1, 1); refreshCalendar(); });
+      shadeMode.addEventListener("change", refreshCalendar);
+
+      reportRange.addEventListener("change", refreshReport);
+      printBtn.addEventListener("click", () => window.print());
+
+      modalClose.addEventListener("click", () => showModal(null));
+      backdrop.addEventListener("click", () => showModal(null));
+      modalSave.addEventListener("click", saveModal);
+      modalDelete.addEventListener("click", deleteModal);
+
+      // -------------------------
+      // Set score max values
+      // -------------------------
+      scoreMax.textContent = String(MAX_SCORE);
+      modalScoreMax.textContent = String(MAX_SCORE);
+
+      // -------------------------
+      // Build UI
+      // -------------------------
+      buildGroups(symptomGroups, "c");
+      buildGroups(modalSymptomGroups, "m");
+
+      wireChips(symptomGroups, "c", checkinState, updateCheckinScore);
+      wireChips(modalSymptomGroups, "m", modalState, updateModalScore);
+
+      function applyStateToChips(prefix, stateObj){
+        SYMPTOMS.forEach(s => setChipSelection(prefix, s.key, clamp(Number(stateObj[s.key]||0),0,3)));
+      }
+
+      // -------------------------
+      // Insights init helpers
+      // -------------------------
+      function fmt(n, d=1){ return (n===null||n===undefined||Number.isNaN(n)) ? "—" : Number(n).toFixed(d); }
+
+      // -------------------------
+      // Init
+      // -------------------------
+      async function init(){
+        updateOfflineBadge();
+        populateShadeMode();
+        await refreshLogsCache();
+
+        const today = toISO(new Date());
+        logDate.value = today;
+
+        // Ensure chips start at 0
+        applyStateToChips("c", checkinState);
+        applyStateToChips("m", modalState);
+
+        await loadIntoCheckin(today);
+        await refreshCalendar();
+        await refreshInsights();
+        await refreshReport();
+
+        // Default calendar mode: Agenda (less spreadsheet vibe)
+        calMode = "agenda";
+        applyCalendarMode();
+      }
+
+      init();
+    })();
+  </script>
 </body>
 </html>
