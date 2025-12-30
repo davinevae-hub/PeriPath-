@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0c0b10" />
+  <title>PeriPath — Symptom & Cycle Tracker</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="PeriPath is a free, privacy-first perimenopause symptom & cycle tracker that works offline. No login. Data stays on your device." />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="mark" aria-hidden="true">
+        <span class="mark-ring"></span>
+        <span class="mark-letter">P</span>
+      </div>
+      <div class="brand">
+        <div class="brand-name">PeriPath</div>
+        <div class="brand-tag">Private tracking. Offline-ready. No account.</div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div id="offlineBadge" class="badge" hidden>Offline</div>
+      <button id="todayBtn" class="btn btn-ghost" type="button">Today</button>
+      <button id="installHelpBtn" class="btn btn-ghost" type="button">Add to Home</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Navigation">
+      <button class="nav active" data-view="checkin">
+        <span class="nav-ico">✶</span>
+        <span class="nav-label">Check-In</span>
+      </button>
+      <button class="nav" data-view="calendar">
+        <span class="nav-ico">▦</span>
+        <span class="nav-label">Calendar</span>
+      </button>
+      <button class="nav" data-view="insights">
+        <span class="nav-ico">◔</span>
+        <span class="nav-label">Insights</span>
+      </button>
+      <button class="nav" data-view="report">
+        <span class="nav-ico">≡</span>
+        <span class="nav-label">Report</span>
+      </button>
+      <button class="nav" data-view="settings">
+        <span class="nav-ico">⚙</span>
+        <span class="nav-label">Settings</span>
+      </button>
+
+      <div class="rail-foot">
+        <div class="tiny muted">
+          Symptom Load Score: sum of 10 symptom ratings (0–3) → 0–30. Not diagnostic.
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- CHECK-IN -->
+      <section id="view-checkin" class="view active" aria-label="Daily check-in">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h1>Daily Check-In</h1>
+              <div class="muted">Fast, consistent logging improves patterns and reports.</div>
+            </div>
+
+            <div class="panel-actions">
+              <div class="field">
+                <label class="label" for="logDate">Date</label>
+                <input id="logDate" type="date" />
+              </div>
+
+              <div class="score">
+                <div class="score-k">Symptom Load</div>
+                <div class="score-v"><span id="scoreValue">0</span><span class="muted">/30</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid" id="symptomGrid"></div>
+
+          <div class="row between wrap">
+            <label class="toggle">
+              <input id="periodToday" type="checkbox" />
+              <span>Period today</span>
+            </label>
+
+            <div class="row gap wrap">
+              <button id="saveBtn" class="btn btn-primary" type="button">Save</button>
+              <button id="resetBtn" class="btn btn-ghost" type="button">Reset</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="notes">Notes (optional)</label>
+            <textarea id="notes" rows="3" placeholder="Sleep triggers, stress, meds, lifestyle changes, anything relevant."></textarea>
+          </div>
+
+          <div id="saveStatus" class="status" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Safety note</h2>
+          <ul class="muted list">
+            <li>This app summarizes what you log; it does not diagnose.</li>
+            <li>Seek urgent care for severe bleeding, chest pain, fainting, or thoughts of self-harm.</li>
+            <li>Use the Report tab before appointments to share patterns clearly.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- CALENDAR -->
+      <section id="view-calendar" class="view" aria-label="Calendar">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h1>Calendar</h1>
+              <div class="muted">Tap any day to view or edit that entry.</div>
+            </div>
+
+            <div class="panel-actions">
+              <div class="row gap">
+                <button id="prevMonth" class="btn btn-ghost" type="button">←</button>
+                <div id="monthLabel" class="monthLabel" aria-live="polite"></div>
+                <button id="nextMonth" class="btn btn-ghost" type="button">→</button>
+              </div>
+
+              <div class="field small">
+                <label class="label" for="calShadeMode">Shade by</label>
+                <select id="calShadeMode">
+                  <option value="score">Symptom Load</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="swatch s0"></span><span class="muted">Low</span></div>
+            <div class="legend-item"><span class="swatch s1"></span><span class="muted">Mild</span></div>
+            <div class="legend-item"><span class="swatch s2"></span><span class="muted">Moderate</span></div>
+            <div class="legend-item"><span class="swatch s3"></span><span class="muted">High</span></div>
+            <div class="legend-item"><span class="pill pill-period">Period</span></div>
+          </div>
+
+          <div class="calendar">
+            <div class="dow">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calendarGrid" class="calendarGrid" role="grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INSIGHTS -->
+      <section id="view-insights" class="view" aria-label="Insights">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h1>Insights</h1>
+              <div class="muted">Trends based on your saved entries (last 30 days where available).</div>
+            </div>
+
+            <div class="panel-actions">
+              <div class="kpi">
+                <div class="kpi-k">7-day avg</div>
+                <div class="kpi-v" id="avg7">—</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-k">Prior 7-day avg</div>
+                <div class="kpi-v" id="avgPrev7">—</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-k">Trend</div>
+                <div class="kpi-v" id="trend7">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chartWrap">
+            <div class="muted small">Symptom Load trend (last 30 days)</div>
+            <div id="trendChart" class="chart" role="img" aria-label="Trend chart"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Top symptoms (last 30 days)</h2>
+          <div id="topSymptoms" class="muted">No data yet.</div>
+        </div>
+      </section>
+
+      <!-- REPORT -->
+      <section id="view-report" class="view" aria-label="Report">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h1>Report</h1>
+              <div class="muted">Designed for printing or saving as PDF for appointments.</div>
+            </div>
+
+            <div class="panel-actions">
+              <div class="field small">
+                <label class="label" for="reportRange">Range</label>
+                <select id="reportRange">
+                  <option value="30">Last 30 days</option>
+                  <option value="60">Last 60 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+              </div>
+
+              <button id="printBtn" class="btn btn-primary" type="button">Print / Save PDF</button>
+            </div>
+          </div>
+
+          <article id="reportContent" class="report">
+            <div class="report-head">
+              <div>
+                <div class="report-title">PeriPath Summary</div>
+                <div id="reportMeta" class="muted">—</div>
+              </div>
+              <div class="report-note muted">
+                Self-reported summary. Not diagnostic.
+              </div>
+            </div>
+
+            <div class="report-kpis">
+              <div class="card">
+                <div class="card-k">Entries</div>
+                <div class="card-v" id="rEntries">—</div>
+              </div>
+              <div class="card">
+                <div class="card-k">Average Load</div>
+                <div class="card-v" id="rAvg">—</div>
+              </div>
+              <div class="card">
+                <div class="card-k">Highest Day</div>
+                <div class="card-v" id="rMax">—</div>
+              </div>
+              <div class="card">
+                <div class="card-k">Period Days</div>
+                <div class="card-v" id="rPeriodDays">—</div>
+              </div>
+            </div>
+
+            <div class="split">
+              <section class="report-block">
+                <h3>Top symptoms</h3>
+                <div id="rTopSymptoms" class="muted">—</div>
+              </section>
+
+              <section class="report-block">
+                <h3>Cycle intervals (if periods tracked)</h3>
+                <div id="rCycle" class="muted">—</div>
+              </section>
+            </div>
+
+            <section class="report-block">
+              <h3>Recent notes</h3>
+              <div id="rNotes" class="muted">—</div>
+            </section>
+
+            <footer class="report-foot muted">
+              <div><strong>PeriPath</strong> stores data on this device (IndexedDB). No login required.</div>
+              <div>Symptom Load = sum of 10 symptoms (0–3) → 0–30.</div>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="view" aria-label="Settings">
+        <div class="panel">
+          <h1>Settings</h1>
+
+          <div class="two">
+            <div class="box">
+              <h2>Add to Home Screen</h2>
+              <div class="muted">
+                <p><strong>iPhone (Safari):</strong> Share → Add to Home Screen</p>
+                <p><strong>Android (Chrome):</strong> Menu → Install app / Add to Home screen</p>
+              </div>
+            </div>
+
+            <div class="box">
+              <h2>Data tools</h2>
+              <div class="row gap wrap">
+                <button id="exportJsonBtn" class="btn btn-ghost" type="button">Export JSON</button>
+                <button id="exportCsvBtn" class="btn btn-ghost" type="button">Export CSV</button>
+                <button id="importBtn" class="btn btn-ghost" type="button">Import JSON</button>
+                <button id="wipeBtn" class="btn btn-danger" type="button">Delete all data</button>
+              </div>
+              <input id="importFile" type="file" accept="application/json" hidden />
+              <div id="dataStatus" class="status" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="box">
+            <h2>Privacy</h2>
+            <div class="muted">
+              PeriPath stores your entries locally in your browser’s IndexedDB storage. No account is required.
+              If you export data, you control where that file goes.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- DAY EDIT MODAL -->
+  <div id="modalBackdrop" class="modal-backdrop" hidden></div>
+  <div id="dayModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal-head">
+      <div>
+        <div id="modalTitle" class="modal-title">Day</div>
+        <div id="modalSub" class="muted small">—</div>
+      </div>
+      <button id="modalClose" class="btn btn-ghost" type="button">Close</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="row between wrap">
+        <div class="score compact">
+          <div class="score-k">Symptom Load</div>
+          <div class="score-v"><span id="modalScore">0</span><span class="muted">/30</span></div>
+        </div>
+
+        <label class="toggle">
+          <input id="modalPeriod" type="checkbox" />
+          <span>Period today</span>
+        </label>
+      </div>
+
+      <div id="modalSymptomGrid" class="grid"></div>
+
+      <div class="field">
+        <label class="label" for="modalNotes">Notes</label>
+        <textarea id="modalNotes" rows="3" placeholder="Notes for this day..."></textarea>
+      </div>
+
+      <div class="row gap wrap">
+        <button id="modalSave" class="btn btn-primary" type="button">Save</button>
+        <button id="modalDelete" class="btn btn-danger" type="button">Delete entry</button>
+      </div>
+
+      <div id="modalStatus" class="status" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- INSTALL HELP MODAL -->
+  <div id="installModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="installTitle" hidden>
+    <div class="modal-head">
+      <div>
+        <div id="installTitle" class="modal-title">Add PeriPath to Home Screen</div>
+        <div class="muted small">For quick access like an app.</div>
+      </div>
+      <button id="installClose" class="btn btn-ghost" type="button">Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="box">
+        <h3>iPhone (Safari)</h3>
+        <ol class="muted list">
+          <li>Tap the Share icon</li>
+          <li>Tap “Add to Home Screen”</li>
+          <li>Tap “Add”</li>
+        </ol>
+      </div>
+      <div class="box">
+        <h3>Android (Chrome)</h3>
+        <ol class="muted list">
+          <li>Tap the menu (⋮)</li>
+          <li>Tap “Install app” or “Add to Home screen”</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
