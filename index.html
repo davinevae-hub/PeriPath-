@@ -218,6 +218,117 @@
       max-width: 1180px;
     }
 
+        /* ------------------------------------------------------------
+       Phone-style frame (desktop) to match the ad look
+       ------------------------------------------------------------ */
+
+    .phoneStage{
+      display:flex;
+      justify-content:center;
+      padding: 18px 14px 120px;
+    }
+
+    .phoneFrame{
+      width: min(460px, 100%);
+      border-radius: 44px;
+      padding: 14px;
+      position: relative;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow:
+        0 30px 90px rgba(0,0,0,.60),
+        0 0 0 1px rgba(255,255,255,.06) inset;
+      backdrop-filter: blur(18px);
+      overflow:hidden;
+    }
+
+    .phoneFrame::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius: 46px;
+      background:
+        radial-gradient(520px 280px at 20% 12%, rgba(255,47,135,.25), transparent 60%),
+        radial-gradient(520px 320px at 92% 18%, rgba(25,211,255,.18), transparent 62%),
+        radial-gradient(620px 380px at 50% 100%, rgba(124,58,237,.18), transparent 65%);
+      opacity:.9;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .phoneFrame::after{
+      content:"";
+      position:absolute;
+      inset: 10px;
+      border-radius: 38px;
+      border: 1px solid rgba(255,255,255,.12);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .phoneInner{
+      position:relative;
+      z-index:1;
+      border-radius: 36px;
+      overflow:hidden;
+      background: rgba(8,10,18,.55);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    /* Make panels inside the phone feel more "screen-like" */
+    .phoneInner .panel{
+      margin: 0;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      padding: 14px;
+    }
+
+    /* Stronger glossy primary button like the ad */
+    .btnPrimary{
+      position: relative;
+      overflow:hidden;
+    }
+    .btnPrimary::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 45%);
+      transform: rotate(12deg);
+      pointer-events:none;
+    }
+
+    /* Darker symptom cards to match ad screen */
+    .symCard{
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    /* Chips slightly more "pill UI" */
+    .chip{
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .chip.active{
+      border-color: rgba(25,211,255,.30);
+      background: linear-gradient(135deg, rgba(25,211,255,.22), rgba(124,58,237,.18));
+    }
+
+    /* Desktop only: center app like the ad */
+    @media (min-width: 981px){
+      .layout{
+        grid-template-columns: 1fr; /* hide left rail spacing */
+      }
+      .rail{
+        display:none; /* keep functionality via topbar nav if you want; see next step */
+      }
+      .main{
+        max-width: none;
+        padding: 0; /* phoneStage handles padding */
+      }
+    }
+
     .view{display:none}
     .view.active{display:block}
 
@@ -797,6 +908,9 @@
     </aside>
 
     <main class="main">
+  <div class="phoneStage">
+    <div class="phoneFrame">
+      <div class="phoneInner">
       <!-- CHECK-IN -->
       <section id="view-checkin" class="view active" aria-label="Daily check-in">
         <div class="panel">
@@ -1034,6 +1148,9 @@
           </div>
         </div>
       </section>
+              </div>
+    </div>
+  </div>
     </main>
   </div>
 
